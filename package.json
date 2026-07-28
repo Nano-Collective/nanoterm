@@ -23,6 +23,7 @@
     "@ai-sdk/anthropic": "^4.0.23",
     "@ai-sdk/google": "^4.0.26",
     "@ai-sdk/openai": "^4.0.22",
+    "@nanocollective/prompt-scrub": "^1.0.0",
     "ai": "^7.0.40",
     "commander": "^15.0.0",
     "ollama-ai-provider": "^1.2.0"
