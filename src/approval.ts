@@ -1,17 +1,28 @@
 import readline from 'readline';
 import { explainCommand } from './generate.js';
+import { isDangerousCommand } from './safety.js';
 
 export async function promptApproval(command: string): Promise<string | null> {
   let currentCommand = command;
 
   while (true) {
+    const isDangerous = isDangerousCommand(currentCommand);
+
+    if (isDangerous) {
+      console.log(`\n\x1b[31;1m[WARNING] This command appears to be destructive.\x1b[0m`);
+    }
+
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
     });
 
+    const promptText = isDangerous
+      ? `Execute? Type 'yes' to confirm [yes/N/edit/?]: `
+      : `Execute? [y/N/edit/?]: `;
+
     const answer = await new Promise<string>((resolve) => {
-      rl.question(`\nExecute? [y/N/edit/?]: `, (ans) => {
+      rl.question(`\n${promptText}`, (ans) => {
         resolve(ans.trim());
       });
     });
@@ -20,8 +31,12 @@ export async function promptApproval(command: string): Promise<string | null> {
 
     const lowerAnswer = answer.toLowerCase();
 
-    if (lowerAnswer === 'y' || lowerAnswer === 'yes') {
+    if ((!isDangerous && (lowerAnswer === 'y' || lowerAnswer === 'yes')) || 
+        (isDangerous && lowerAnswer === 'yes')) {
       return currentCommand;
+    } else if (isDangerous && lowerAnswer === 'y') {
+      console.log(`\n\x1b[33mDestructive commands require typing the full word 'yes'.\x1b[0m`);
+      // loop continues
     } else if (lowerAnswer === '?' || lowerAnswer === 'explain') {
       try {
         console.log(`\nAsking for explanation...`);
