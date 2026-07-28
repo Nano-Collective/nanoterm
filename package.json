@@ -1,0 +1,39 @@
+{
+  "name": "nanoterm",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsup src/index.ts --format esm --clean",
+    "start": "node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nano-Collective/nanoterm.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Nano-Collective/nanoterm/issues"
+  },
+  "homepage": "https://github.com/Nano-Collective/nanoterm#readme",
+  "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.23",
+    "@ai-sdk/google": "^4.0.26",
+    "@ai-sdk/openai": "^4.0.22",
+    "ai": "^7.0.40",
+    "commander": "^15.0.0",
+    "ollama-ai-provider": "^1.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "tsup": "^8.5.1",
+    "typescript": "^7.0.2"
+  },
+  "bin": {
+    "nanoterm": "dist/index.js"
+  },
+  "type": "module"
+}
