@@ -10,3 +10,8 @@ Environment context:
 - Shell: ${env.shell}
 - Current Working Directory: ${env.cwd}`;
 }
+
+export function buildExplainPrompt(): string {
+  return `You are Nanoterm. Your job is to explain a shell command to the user.
+  Explain what the following command does in 1-2 short, clear sentences. Do not use conversational filler, just explain the command.`;
+}
