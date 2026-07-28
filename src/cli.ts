@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { generateCommand } from './generate.js';
 import { promptApproval } from './approval.js';
+import { executeCommand } from './execute.js';
 
 export async function runCLI(args: string[]) {
   const program = new Command();
@@ -17,8 +18,13 @@ export async function runCLI(args: string[]) {
         const approvedCommand = await promptApproval(command);
 
         if (approvedCommand) {
-          console.log(`\nCommand approved. Execution coming in Phase 3!`);
-          process.exit(0);
+          try {
+            const exitCode = await executeCommand(approvedCommand);
+            process.exit(exitCode);
+          } catch (execErr: any) {
+            console.error(`\nExecution failed: ${execErr.message}`);
+            process.exit(1);
+          }
         } else {
           console.log(`\nAborted.`);
           process.exit(0);
