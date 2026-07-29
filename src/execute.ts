@@ -1,45 +1,45 @@
-import { spawn } from 'child_process';
-import { saveSessionContext } from './session.js';
+import { spawn } from "node:child_process";
+import { saveSessionContext } from "./session.js";
 
 export async function executeCommand(command: string): Promise<number> {
-  return new Promise((resolve, reject) => {
-    // Detect the user's shell, fallback to /bin/sh
-    const shell = process.env.SHELL || '/bin/sh';
+	return new Promise((resolve, reject) => {
+		// Detect the user's shell, fallback to /bin/sh
+		const shell = process.env.SHELL || "/bin/sh";
 
-    console.log(`\nExecuting: ${command}\n`);
+		console.log(`\nExecuting: ${command}\n`);
 
-    const child = spawn(shell, ['-c', command], {
-      stdio: ['inherit', 'pipe', 'pipe'],
-      env: process.env,
-    });
+		const child = spawn(shell, ["-c", command], {
+			stdio: ["inherit", "pipe", "pipe"],
+			env: process.env,
+		});
 
-    let stdoutData = '';
-    let stderrData = '';
+		let stdoutData = "";
+		let stderrData = "";
 
-    child.stdout.on('data', (data) => {
-      stdoutData += data.toString();
-      process.stdout.write(data);
-    });
+		child.stdout.on("data", (data: Buffer | string) => {
+			stdoutData += data.toString();
+			process.stdout.write(data);
+		});
 
-    child.stderr.on('data', (data) => {
-      stderrData += data.toString();
-      process.stderr.write(data);
-    });
+		child.stderr.on("data", (data: Buffer | string) => {
+			stderrData += data.toString();
+			process.stderr.write(data);
+		});
 
-    child.on('error', (err) => {
-      reject(err);
-    });
+		child.on("error", (err: Error) => {
+			reject(err);
+		});
 
-    child.on('exit', (code) => {
-      // Save session context before exiting
-      saveSessionContext(command, stdoutData, stderrData);
+		child.on("exit", (code: number | null) => {
+			// Save session context before exiting
+			saveSessionContext(command, stdoutData, stderrData);
 
-      if (code === null) {
-        // Process was terminated by a signal
-        resolve(1);
-      } else {
-        resolve(code);
-      }
-    });
-  });
+			if (code === null) {
+				// Process was terminated by a signal
+				resolve(1);
+			} else {
+				resolve(code);
+			}
+		});
+	});
 }
