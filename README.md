@@ -1,60 +1,71 @@
-# Nanoterm
+# nanoterm
 
-**Nanoterm** is an ultra-lightweight, local-first AI terminal companion built by the [Nano Collective](https://github.com/Nano-Collective). 
+Built by the [Nano Collective](https://nanocollective.org) — a community collective building AI tooling not for profit, but for the community.
 
-Unlike full AI agents that scan your workspace and build complex plans, Nanoterm is designed for speed and single-shot execution. It takes your natural language request, generates a shell command, and executes it directly in your native shell—only after your explicit approval.
+`nanoterm` is an ultra-lightweight, high-performance AI terminal companion that translates natural language requests into bash commands securely and instantly.
 
-## Features
+![Build Status](https://github.com/Nano-Collective/nanoterm/raw/main/badges/build.svg)
+![Coverage](https://github.com/Nano-Collective/nanoterm/raw/main/badges/coverage.svg)
+![Version](https://github.com/Nano-Collective/nanoterm/raw/main/badges/npm-version.svg)
+![Downloads](https://github.com/Nano-Collective/nanoterm/raw/main/badges/npm-downloads-monthly.svg)
+![License](https://github.com/Nano-Collective/nanoterm/raw/main/badges/npm-license.svg)
 
-- **Blazing Fast:** Sub-second startup time. No indexing, no background daemons, no scanning.
-- **Privacy First:** Out-of-the-box integration with `@nanocollective/prompt-scrub`. If you use a cloud provider, all PII, secrets, and local paths are scrubbed from your context before leaving your machine. If you use Ollama, data never leaves.
-- **Ephemeral Sessions:** Nanoterm remembers the stdout/stderr of your last command using temporary PID-scoped session caches. You can naturally chain follow-up commands (e.g. `nanoterm "find empty dirs"` → `nanoterm "delete them"`).
-- **Safety First:** Built-in heuristic engine aggressively flags destructive commands (`rm -rf`, recursive `chmod`, disk formatting) and enforces explicit, typed `yes` confirmations.
+It allows you to bypass writing complex regex, `find`, `awk`, or `sed` commands by simply asking your terminal what you want it to do in plain English. `nanoterm` connects directly to your chosen provider (OpenAI, Anthropic, Google, Atlas Cloud) via the Vercel AI SDK.
 
-## Installation
+## What it is / What it is not
+
+`nanoterm` is a highly secure, privacy-first command generator designed for developers who value safety and speed.
+
+**What it does:**
+- Automatically scrubs sensitive data (emails, IPs, phone numbers) before sending your prompt to a cloud LLM, ensuring your privacy.
+- Uses strict safety guardrails to proactively block destructive commands (like `rm -rf /` or recursive `chmod`).
+- Interactively prompts you for approval before executing any command on your machine.
+- Seamlessly integrates with the Nanocoder and Repokit ecosystem for unified API configuration.
+
+**What it does not do:**
+- It does not blindly execute commands without your explicit consent.
+- It is not an autonomous agent; it only acts when invoked and waits for approval.
+- It does not track you, send telemetry data, or require an account.
+
+> [!IMPORTANT]
+> Always review the generated bash command carefully before pressing `y` (Yes) to execute. You always have the option to press `edit` to safely modify it before it runs!
+
+## Quick Start
+
+Install globally to use the CLI:
 
 ```bash
-pnpm install -g @nanocollective/nanoterm
-# or
 npm install -g @nanocollective/nanoterm
 ```
 
-## Configuration
+### Configuration Wizard
 
-Nanoterm shares the exact same configuration format as Nanocoder. It looks for `agents.config.json` in your current directory, `~/.config/nanoterm/`, or `~/.config/nanocoder/`.
-
-```json
-{
-  "provider": "openai",
-  "model": "gpt-4o",
-  "apiKeys": {
-    "openai": "sk-...",
-    "anthropic": "sk-ant-...",
-    "google": "AIza..."
-  },
-  "ollama": {
-    "baseUrl": "http://127.0.0.1:11434/api"
-  }
-}
-```
-
-## Usage
+Before generating commands, set up your API keys and default models:
 
 ```bash
-nanoterm "find all large png files"
-# Proposed command:
-# > find . -type f -name "*.png" -size +10M
-# Execute? [y/N/edit/?]: 
+nanoterm config
 ```
 
-- `y`: Execute the command instantly.
-- `N`: Abort.
-- `edit`: Open the command for manual editing before running.
-- `?`: Ask the AI to explain what the command will do.
+This will launch a beautiful interactive setup wizard. You can choose from OpenAI, Anthropic, Google Gemini, Atlas Cloud, or any Custom OpenAI-compatible provider.
+
+## Usage Examples
+
+**CLI: Generate and execute a command**
+```bash
+nanoterm find all png files in the current directory
+```
+
+```text
+Proposed command:
+> find . -type f -name "*.png"
+
+Execute? [y/N/edit/?]: y
+```
+
+You can even omit the quotes entirely! `nanoterm list all open ports` works seamlessly out of the box.
 
 ## Community
 
-Built by the Nano Collective — a community building AI tooling not for profit, but for the community.
-- **Discord:** Join the Nano Collective Discord
-- **Contributing:** Read our `CONTRIBUTING.md` to get started.
-- **Issues:** Check GitHub Issues for planned work or to report bugs.
+- **Discord:** [Join the Nano Collective Discord](https://discord.gg/ktPDV6rekE)
+- **Contributing:** Read our [Contributing Guide](CONTRIBUTING.md) to get started.
+- **Issues:** Check the [GitHub Issues](https://github.com/Nano-Collective/nanoterm/issues) for planned work or to report bugs.

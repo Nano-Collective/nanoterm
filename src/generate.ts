@@ -1,16 +1,18 @@
 import { generateText } from "ai";
 import { getEnvironmentContext } from "./env.js";
 import { loadSessionContext } from "./session.js";
-import { loadConfig } from "./config.js";
+import type { NanotermConfig } from "./config.js";
 import { getProviderModel } from "./provider.js";
 import { buildSystemPrompt, buildExplainPrompt } from "./prompt.js";
 import { scrubPrompt } from "./privacy.js";
 
-export async function generateCommand(request: string): Promise<string> {
+export async function generateCommand(
+	request: string,
+	config: NanotermConfig,
+): Promise<string> {
 	const env = getEnvironmentContext();
-	const config = loadConfig();
 	const session = loadSessionContext();
-	const model = getProviderModel(config.provider, config.model);
+	const model = getProviderModel(config, config.model);
 	const rawSystemPrompt = buildSystemPrompt(env, session);
 
 	// Scrub the prompts before sending to cloud providers
@@ -27,9 +29,11 @@ export async function generateCommand(request: string): Promise<string> {
 	return text.trim();
 }
 
-export async function explainCommand(command: string): Promise<string> {
-	const config = loadConfig();
-	const model = getProviderModel(config.provider, config.model);
+export async function explainCommand(
+	command: string,
+	config: NanotermConfig,
+): Promise<string> {
+	const model = getProviderModel(config, config.model);
 	const rawSystemPrompt = buildExplainPrompt();
 
 	const systemPrompt = scrubPrompt(rawSystemPrompt, config.provider);

@@ -2,7 +2,12 @@ import readline from "node:readline";
 import { explainCommand } from "./generate.js";
 import { isDangerousCommand } from "./safety.js";
 
-export async function promptApproval(command: string): Promise<string | null> {
+import type { NanotermConfig } from "./config.js";
+
+export async function promptApproval(
+	command: string,
+	config: NanotermConfig,
+): Promise<string | null> {
 	let currentCommand = command;
 
 	while (true) {
@@ -46,11 +51,25 @@ export async function promptApproval(command: string): Promise<string | null> {
 		} else if (lowerAnswer === "?" || lowerAnswer === "explain") {
 			try {
 				console.log(`\nAsking for explanation...`);
-				const explanation = await explainCommand(currentCommand);
+				const explanation = await explainCommand(currentCommand, config);
 				console.log(`\nExplanation:\n${explanation}`);
 			} catch (err: unknown) {
 				const errorMessage = err instanceof Error ? err.message : String(err);
-				console.error(`\nFailed to explain command: ${errorMessage}`);
+				if (
+					errorMessage.toLowerCase().includes("api key") ||
+					errorMessage.toLowerCase().includes("unauthorized")
+				) {
+					console.error(
+						`\n\x1b[31mNo API key configured for ${config.provider}.\x1b[0m`,
+					);
+					console.error(
+						`\x1b[31mRun 'nanoterm config' to set up your provider.\x1b[0m`,
+					);
+				} else {
+					console.error(
+						`\n\x1b[31mFailed to explain command: ${errorMessage}\x1b[0m`,
+					);
+				}
 			}
 			// loop continues
 		} else if (lowerAnswer === "edit" || lowerAnswer === "e") {
