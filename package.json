@@ -43,8 +43,7 @@
 		"@inquirer/prompts": "^8.5.2",
 		"@nanocollective/prompt-scrub": "^1.0.0",
 		"ai": "^7.0.40",
-		"commander": "^15.0.0",
-		"ollama-ai-provider": "^1.2.0"
+		"commander": "^15.0.0"
 	},
 	"devDependencies": {
 		"@ava/typescript": "^7.0.0",

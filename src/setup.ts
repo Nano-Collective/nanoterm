@@ -12,7 +12,7 @@ const LOCAL_PROVIDERS = [
 		name: "Ollama",
 		defaultBaseUrl: "http://localhost:11434/v1",
 		models: ["llama4", "qwen3", "phi4", "Custom..."],
-		sdkProvider: "ollama",
+		sdkProvider: "openai-compatible",
 		isLocal: true,
 	},
 	{

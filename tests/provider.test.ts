@@ -12,7 +12,7 @@ test("provider correctly initializes ollama local provider without API key", (t)
 				baseUrl: "http://localhost:11434/v1",
 				apiKey: "", // Deliberately blank for local
 				models: ["llama3"],
-				sdkProvider: "ollama",
+				sdkProvider: "openai-compatible",
 			},
 		],
 	};
@@ -21,7 +21,7 @@ test("provider correctly initializes ollama local provider without API key", (t)
 
 	t.truthy(modelInstance);
 	t.is(modelInstance.modelId, "llama3");
-	t.is(modelInstance.provider, "ollama.chat");
+	t.truthy(modelInstance.provider.includes("Ollama"));
 });
 
 test("provider correctly initializes generic local openai-compatible provider with dummy key", (t) => {

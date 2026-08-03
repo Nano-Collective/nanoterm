@@ -4,7 +4,6 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createMistral } from "@ai-sdk/mistral";
 import { createCohere } from "@ai-sdk/cohere";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { createOllama } from "ollama-ai-provider";
 import type { NanotermConfig } from "./config.js";
 
 // biome-ignore lint/suspicious/noExplicitAny: Vercel AI SDK version mismatch requires any
@@ -45,10 +44,7 @@ export function getProviderModel(
 				const cohere = createCohere({ apiKey, baseURL });
 				return cohere(modelName);
 			}
-			case "ollama": {
-				const ollama = createOllama({ baseURL });
-				return ollama(modelName);
-			}
+
 			default: {
 				const compatible = createOpenAICompatible({
 					name: customConfig.name,
@@ -83,8 +79,12 @@ export function getProviderModel(
 			return cohere(modelName);
 		}
 		case "ollama": {
-			const ollama = createOllama();
-			return ollama(modelName);
+			const compatible = createOpenAICompatible({
+				name: "Ollama",
+				apiKey: "dummy-key",
+				baseURL: "http://localhost:11434/v1",
+			});
+			return compatible(modelName);
 		}
 		default: {
 			const defaultProvider = createOpenAI();

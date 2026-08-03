@@ -18,12 +18,8 @@ export async function generateCommand(
 	const sessionMap: Record<string, string> = {};
 
 	// Scrub the prompts before sending to cloud providers
-	const systemPrompt = scrubPrompt(
-		rawSystemPrompt,
-		config.provider,
-		sessionMap,
-	);
-	const safeRequest = scrubPrompt(request, config.provider, sessionMap);
+	const systemPrompt = scrubPrompt(rawSystemPrompt, config, sessionMap);
+	const safeRequest = scrubPrompt(request, config, sessionMap);
 
 	const { text } = await generateText({
 		model,
@@ -32,7 +28,7 @@ export async function generateCommand(
 		temperature: 0,
 	});
 
-	return rehydratePrompt(text.trim(), config.provider, sessionMap);
+	return rehydratePrompt(text.trim(), config, sessionMap);
 }
 
 export async function explainCommand(
@@ -44,12 +40,8 @@ export async function explainCommand(
 
 	const sessionMap: Record<string, string> = {};
 
-	const systemPrompt = scrubPrompt(
-		rawSystemPrompt,
-		config.provider,
-		sessionMap,
-	);
-	const safeCommand = scrubPrompt(command, config.provider, sessionMap);
+	const systemPrompt = scrubPrompt(rawSystemPrompt, config, sessionMap);
+	const safeCommand = scrubPrompt(command, config, sessionMap);
 
 	const { text } = await generateText({
 		model,
@@ -58,5 +50,5 @@ export async function explainCommand(
 		temperature: 0.2,
 	});
 
-	return rehydratePrompt(text.trim(), config.provider, sessionMap);
+	return rehydratePrompt(text.trim(), config, sessionMap);
 }
