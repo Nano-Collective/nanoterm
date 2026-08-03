@@ -44,5 +44,5 @@ test("provider correctly initializes generic local openai-compatible provider wi
 	t.truthy(modelInstance);
 	t.is(modelInstance.modelId, "local-model");
 	// The Vercel AI SDK stores the provider string on the object depending on the implementation
-	t.truthy(modelInstance.provider.includes("LM Studio")); 
+	t.truthy(modelInstance.provider.includes("LM Studio"));
 });

@@ -4,7 +4,7 @@ import { loadSessionContext } from "./session.js";
 import type { NanotermConfig } from "./config.js";
 import { getProviderModel } from "./provider.js";
 import { buildSystemPrompt, buildExplainPrompt } from "./prompt.js";
-import { scrubPrompt } from "./privacy.js";
+import { scrubPrompt, rehydratePrompt } from "./privacy.js";
 
 export async function generateCommand(
 	request: string,
@@ -15,9 +15,15 @@ export async function generateCommand(
 	const model = getProviderModel(config, config.model);
 	const rawSystemPrompt = buildSystemPrompt(env, session);
 
+	const sessionMap: Record<string, string> = {};
+
 	// Scrub the prompts before sending to cloud providers
-	const systemPrompt = scrubPrompt(rawSystemPrompt, config.provider);
-	const safeRequest = scrubPrompt(request, config.provider);
+	const systemPrompt = scrubPrompt(
+		rawSystemPrompt,
+		config.provider,
+		sessionMap,
+	);
+	const safeRequest = scrubPrompt(request, config.provider, sessionMap);
 
 	const { text } = await generateText({
 		model,
@@ -26,7 +32,7 @@ export async function generateCommand(
 		temperature: 0,
 	});
 
-	return text.trim();
+	return rehydratePrompt(text.trim(), config.provider, sessionMap);
 }
 
 export async function explainCommand(
@@ -36,8 +42,14 @@ export async function explainCommand(
 	const model = getProviderModel(config, config.model);
 	const rawSystemPrompt = buildExplainPrompt();
 
-	const systemPrompt = scrubPrompt(rawSystemPrompt, config.provider);
-	const safeCommand = scrubPrompt(command, config.provider);
+	const sessionMap: Record<string, string> = {};
+
+	const systemPrompt = scrubPrompt(
+		rawSystemPrompt,
+		config.provider,
+		sessionMap,
+	);
+	const safeCommand = scrubPrompt(command, config.provider, sessionMap);
 
 	const { text } = await generateText({
 		model,
@@ -46,5 +58,5 @@ export async function explainCommand(
 		temperature: 0.2,
 	});
 
-	return text.trim();
+	return rehydratePrompt(text.trim(), config.provider, sessionMap);
 }
