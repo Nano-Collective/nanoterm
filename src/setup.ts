@@ -6,9 +6,44 @@ import { generateText } from "ai";
 import { getProviderModel } from "./provider.js";
 import type { NanotermConfig } from "./config.js";
 
-const PROVIDERS = [
+const LOCAL_PROVIDERS = [
 	{
-		id: "1",
+		id: "ollama",
+		name: "Ollama",
+		defaultBaseUrl: "http://localhost:11434/v1",
+		models: ["llama4", "qwen3", "phi4", "Custom..."],
+		sdkProvider: "ollama",
+		isLocal: true,
+	},
+	{
+		id: "llama-cpp",
+		name: "llama.cpp server",
+		defaultBaseUrl: "http://localhost:8080/v1",
+		models: ["Custom..."],
+		sdkProvider: "openai-compatible",
+		isLocal: true,
+	},
+	{
+		id: "lmstudio",
+		name: "LM Studio",
+		defaultBaseUrl: "http://localhost:1234/v1",
+		models: ["Custom..."],
+		sdkProvider: "openai-compatible",
+		isLocal: true,
+	},
+	{
+		id: "mlx-server",
+		name: "MLX Server",
+		defaultBaseUrl: "http://localhost:8080/v1",
+		models: ["Custom..."],
+		sdkProvider: "openai-compatible",
+		isLocal: true,
+	},
+];
+
+const CLOUD_PROVIDERS = [
+	{
+		id: "openai",
 		name: "OpenAI",
 		defaultBaseUrl: "https://api.openai.com/v1",
 		models: [
@@ -21,7 +56,7 @@ const PROVIDERS = [
 		sdkProvider: "openai",
 	},
 	{
-		id: "2",
+		id: "anthropic",
 		name: "Anthropic Claude",
 		defaultBaseUrl: "https://api.anthropic.com/v1",
 		models: [
@@ -34,7 +69,7 @@ const PROVIDERS = [
 		sdkProvider: "anthropic",
 	},
 	{
-		id: "3",
+		id: "google",
 		name: "Google Gemini",
 		defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta",
 		models: [
@@ -46,7 +81,7 @@ const PROVIDERS = [
 		sdkProvider: "google",
 	},
 	{
-		id: "4",
+		id: "atlas-cloud",
 		name: "Atlas Cloud",
 		defaultBaseUrl: "https://api.atlascloud.ai/v1",
 		models: [
@@ -58,13 +93,15 @@ const PROVIDERS = [
 		sdkProvider: "openai-compatible",
 	},
 	{
-		id: "5",
+		id: "custom",
 		name: "Custom (OpenAI Compatible)",
 		defaultBaseUrl: "",
 		models: ["Custom..."],
 		sdkProvider: "openai-compatible",
 	},
 ];
+
+const PROVIDERS = [...LOCAL_PROVIDERS, ...CLOUD_PROVIDERS];
 
 export async function runConfigWizard() {
 	console.log("\n\x1b[36;1m--- Nanoterm Advanced Setup Wizard ---\x1b[0m\n");
@@ -146,9 +183,20 @@ export async function runConfigWizard() {
 			}
 		}
 
+		const providerType = await select({
+			message: "Select provider type:",
+			choices: [
+				{ name: "Local Provider (Ollama, LM Studio, etc.)", value: "local" },
+				{ name: "Cloud Provider (OpenAI, Anthropic, etc.)", value: "cloud" },
+			],
+		});
+
+		const providerList =
+			providerType === "local" ? LOCAL_PROVIDERS : CLOUD_PROVIDERS;
+
 		const providerId = await select({
 			message: "Select a provider to configure:",
-			choices: PROVIDERS.map((p) => ({
+			choices: providerList.map((p) => ({
 				name: p.name,
 				value: p.id,
 			})),
@@ -157,10 +205,16 @@ export async function runConfigWizard() {
 		const selectedProvider = PROVIDERS.find((p) => p.id === providerId)!;
 
 		let baseUrl = selectedProvider.defaultBaseUrl;
-		if (selectedProvider.id === "5") {
+		if (selectedProvider.id === "custom") {
 			baseUrl = await input({
 				message: "Enter Base URL (e.g. https://api.together.ai/v1): ",
 			});
+		} else if ((selectedProvider as any).isLocal) {
+			const customBaseUrl = await input({
+				message: `Enter Base URL (default: ${baseUrl}): `,
+				default: baseUrl,
+			});
+			if (customBaseUrl.trim()) baseUrl = customBaseUrl.trim();
 		}
 
 		const modelChoice = await select({
@@ -180,6 +234,13 @@ export async function runConfigWizard() {
 
 		let apiKey = "";
 		let isValid = false;
+
+		if ((selectedProvider as any).isLocal) {
+			console.log(
+				"\x1b[36m\nLocal provider selected. Skipping API key validation...\x1b[0m",
+			);
+			isValid = true;
+		}
 
 		while (!isValid) {
 			apiKey = await password({
