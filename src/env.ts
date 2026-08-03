@@ -1,4 +1,5 @@
 import os from "node:os";
+import path from "node:path";
 
 export interface EnvironmentContext {
 	osPlatform: string;
@@ -11,7 +12,7 @@ export function getEnvironmentContext(): EnvironmentContext {
 	return {
 		osPlatform: os.platform(),
 		osRelease: os.release(),
-		shell: process.env.SHELL || "unknown",
+		shell: path.basename(process.env.SHELL || "unknown"),
 		cwd: process.cwd(),
 	};
 }
