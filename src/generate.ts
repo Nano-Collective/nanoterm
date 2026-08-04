@@ -28,7 +28,25 @@ export async function generateCommand(
 		temperature: 0,
 	});
 
-	return rehydratePrompt(text.trim(), config, sessionMap);
+	let rawCommand = rehydratePrompt(text.trim(), config, sessionMap);
+	return sanitizeCommand(rawCommand);
+}
+
+export function sanitizeCommand(command: string): string {
+	let finalCommand = command.trim();
+
+	// Strip fenced code blocks if the model wrapped the response
+	const codeBlockMatch = finalCommand.match(/```[a-zA-Z]*\n([\s\S]*?)\n```/);
+	if (codeBlockMatch) {
+		finalCommand = codeBlockMatch[1].trim();
+	} else {
+		finalCommand = finalCommand.replace(/^```[a-zA-Z]*\n?/i, "").replace(/\n?```$/i, "").trim();
+	}
+
+	// Strip leading shell prompts
+	finalCommand = finalCommand.replace(/^\$\s+/, "").trim();
+
+	return finalCommand;
 }
 
 export async function explainCommand(

@@ -11,11 +11,15 @@ export async function promptApproval(
 	let currentCommand = command;
 
 	while (true) {
-		const isDangerous = isDangerousCommand(currentCommand);
+		const isDangerous = currentCommand ? isDangerousCommand(currentCommand) : false;
 
 		if (isDangerous) {
 			console.log(
 				`\n\x1b[31;1m[WARNING] This command appears to be destructive.\x1b[0m`,
+			);
+		} else if (!currentCommand) {
+			console.log(
+				`\n\x1b[33m[WARNING] The command is empty.\x1b[0m`,
 			);
 		}
 
@@ -26,7 +30,7 @@ export async function promptApproval(
 
 		const promptText = isDangerous
 			? `Execute? Type 'yes' to confirm [yes/N/edit/?]: `
-			: `Execute? [y/N/edit/?]: `;
+			: (!currentCommand ? `Command is empty [edit/abort]: ` : `Execute? [y/N/edit/?]: `);
 
 		const answer = await new Promise<string>((resolve) => {
 			rl.question(`\n${promptText}`, (ans: string) => {
@@ -39,10 +43,14 @@ export async function promptApproval(
 		const lowerAnswer = answer.toLowerCase();
 
 		if (
-			(!isDangerous && (lowerAnswer === "y" || lowerAnswer === "yes")) ||
-			(isDangerous && lowerAnswer === "yes")
+			currentCommand &&
+			((!isDangerous && (lowerAnswer === "y" || lowerAnswer === "yes")) ||
+			(isDangerous && lowerAnswer === "yes"))
 		) {
 			return currentCommand;
+		} else if (!currentCommand && (lowerAnswer === "y" || lowerAnswer === "yes")) {
+			console.log(`\n\x1b[33mCannot execute an empty command. Please edit or abort.\x1b[0m`);
+			// loop continues
 		} else if (isDangerous && lowerAnswer === "y") {
 			console.log(
 				`\n\x1b[33mDestructive commands require typing the full word 'yes'.\x1b[0m`,
@@ -73,8 +81,14 @@ export async function promptApproval(
 			}
 			// loop continues
 		} else if (lowerAnswer === "edit" || lowerAnswer === "e") {
-			currentCommand = await promptEdit(currentCommand);
-			console.log(`\nProposed command:\n> ${currentCommand}`);
+			const editedCommand = await promptEdit(currentCommand);
+			if (!editedCommand) {
+				console.log(`\n\x1b[33mCommand is still empty.\x1b[0m`);
+			}
+			currentCommand = editedCommand;
+			if (currentCommand) {
+				console.log(`\nProposed command:\n> ${currentCommand}`);
+			}
 			// loop continues
 		} else {
 			// Default to No

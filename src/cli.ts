@@ -37,7 +37,9 @@ export async function runCLI(args: string[]) {
 
 			try {
 				const command = await generateCommand(request, config);
-				console.log(`\nProposed command:\n> ${command}`);
+				if (command) {
+					console.log(`\nProposed command:\n> ${command}`);
+				}
 
 				const approvedCommand = await promptApproval(command, config);
 
