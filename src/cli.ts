@@ -12,6 +12,8 @@ export async function runCLI(args: string[]) {
 	program
 		.name("nanoterm")
 		.description("An ultra-lightweight AI terminal companion")
+		.allowUnknownOption()
+		.enablePositionalOptions()
 		.addHelpText(
 			"after",
 			"\nCommands:\n  config      Run the interactive setup wizard to configure API keys\n",

@@ -64,6 +64,9 @@ Execute? [y/N/edit/?]: y
 
 You can even omit the quotes entirely! `nanoterm list all open ports` works seamlessly out of the box.
 
+> [!WARNING]
+> Unquoted requests are subject to shell expansion before `nanoterm` sees them. For example, `nanoterm find all *.png files` will expand `*.png` in your shell if matches exist. If your request includes glob patterns, variables, or shell metacharacters, it is safer to wrap your request in quotes.
+
 ## Community
 
 - **Discord:** [Join the Nano Collective Discord](https://discord.gg/ktPDV6rekE)
