@@ -4,7 +4,7 @@ import os from "node:os";
 import { select, input, password } from "@inquirer/prompts";
 import { generateText } from "ai";
 import { getProviderModel } from "./provider.js";
-import type { NanotermConfig } from "./config.js";
+import { type NanotermConfig, getPlatformConfigDir } from "./config.js";
 
 const LOCAL_PROVIDERS = [
 	{
@@ -107,7 +107,7 @@ export async function runConfigWizard() {
 	console.log("\n\x1b[36;1m--- Nanoterm Advanced Setup Wizard ---\x1b[0m\n");
 
 	try {
-		const configDir = path.join(os.homedir(), ".config", "nanoterm");
+		const configDir = getPlatformConfigDir("nanoterm");
 		if (!fs.existsSync(configDir)) {
 			fs.mkdirSync(configDir, { recursive: true });
 		}

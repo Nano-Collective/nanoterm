@@ -16,32 +16,75 @@ export interface NanotermConfig {
 	providers: ProviderConfig[];
 }
 
+export function getPlatformConfigDir(appName: string): string {
+	if (process.platform === "darwin") {
+		return path.join(os.homedir(), "Library", "Preferences", appName);
+	}
+	if (process.platform === "win32") {
+		return path.join(
+			process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"),
+			appName,
+		);
+	}
+	return path.join(os.homedir(), ".config", appName);
+}
+
+export function resolveEnvVars(value: string | undefined): string | undefined {
+	if (!value) return value;
+	return value.replace(
+		/\$(?:([A-Za-z0-9_]+)|\{([A-Za-z0-9_]+)(?::-([^}]*))?\})/g,
+		(match, p1, p2, p3) => {
+			const varName = p1 || p2;
+			const envVal = process.env[varName];
+			if (envVal) return envVal;
+			if (p3 !== undefined) return p3;
+			return "";
+		},
+	);
+}
+
 export function loadConfig(): NanotermConfig {
 	const configPaths = [
-		process.env.NANOTERM_CONFIG_PATH,
-		path.join(os.homedir(), ".config", "nanocoder", "agents.config.json"),
-		path.join(os.homedir(), ".config", "nanoterm", "agents.config.json"),
 		path.join(process.cwd(), "agents.config.json"),
-	];
+		process.env.NANOTERM_CONFIG_PATH,
+		process.env.NANOCODER_CONFIG_DIR
+			? path.join(process.env.NANOCODER_CONFIG_DIR, "agents.config.json")
+			: undefined,
+		path.join(getPlatformConfigDir("nanoterm"), "agents.config.json"),
+		path.join(getPlatformConfigDir("nanocoder"), "agents.config.json"),
+		path.join(os.homedir(), ".agents.config.json"),
+	].filter(Boolean) as string[];
 
 	for (const configPath of configPaths) {
-		if (configPath && fs.existsSync(configPath)) {
+		if (fs.existsSync(configPath)) {
 			try {
 				const fileContent = fs.readFileSync(configPath, "utf-8");
 				const config = JSON.parse(fileContent);
 
 				// Extract providers from the nested nanocoder config, if it exists
-				const providers: ProviderConfig[] =
+				let providers: ProviderConfig[] =
 					config.nanocoder?.providers || config.providers || [];
 
+				providers = providers.map((p) => ({
+					...p,
+					baseUrl: resolveEnvVars(p.baseUrl),
+					apiKey: resolveEnvVars(p.apiKey),
+				}));
+
+				const fallbackProvider = providers.length > 0 ? providers[0].name : "openai";
+				const fallbackModel =
+					providers.length > 0 && providers[0].models && providers[0].models.length > 0
+						? providers[0].models[0]
+						: "gpt-4o";
+
 				const provider =
-					config.provider ||
-					config.nanocoder?.modeProviders?.normal?.provider ||
-					"openai";
+					resolveEnvVars(
+						config.provider || config.nanocoder?.modeProviders?.normal?.provider,
+					) || fallbackProvider;
 				const model =
-					config.model ||
-					config.nanocoder?.modeProviders?.normal?.model ||
-					"gpt-4o";
+					resolveEnvVars(
+						config.model || config.nanocoder?.modeProviders?.normal?.model,
+					) || fallbackModel;
 
 				return {
 					provider,
