@@ -23,6 +23,7 @@ test("buildSystemPrompt injects session context when provided", (t) => {
 		lastCommand: "ls -la",
 		stdout: "total 0\nfile1.txt",
 		stderr: "",
+		timestamp: Date.now(),
 	};
 
 	const prompt = buildSystemPrompt(mockEnv, mockSession);
@@ -39,6 +40,7 @@ test("buildSystemPrompt injects stderr if present in session context", (t) => {
 		lastCommand: "cat missing.txt",
 		stdout: "",
 		stderr: "cat: missing.txt: No such file or directory",
+		timestamp: Date.now(),
 	};
 
 	const prompt = buildSystemPrompt(mockEnv, mockSession);
