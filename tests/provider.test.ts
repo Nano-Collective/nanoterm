@@ -2,7 +2,7 @@ import test from "ava";
 import { getProviderModel } from "../src/provider.js";
 import type { NanotermConfig } from "../src/config.js";
 
-test("provider correctly initializes ollama local provider without API key", (t) => {
+test("provider correctly initializes ollama local provider without API key", async (t) => {
 	const mockConfig: NanotermConfig = {
 		provider: "Ollama",
 		model: "llama3",
@@ -17,14 +17,14 @@ test("provider correctly initializes ollama local provider without API key", (t)
 		],
 	};
 
-	const modelInstance = getProviderModel(mockConfig, "llama3");
+	const modelInstance = await getProviderModel(mockConfig, "llama3");
 
 	t.truthy(modelInstance);
 	t.is(modelInstance.modelId, "llama3");
 	t.truthy(modelInstance.provider.includes("Ollama"));
 });
 
-test("provider correctly initializes generic local openai-compatible provider with dummy key", (t) => {
+test("provider correctly initializes generic local openai-compatible provider with dummy key", async (t) => {
 	const mockConfig: NanotermConfig = {
 		provider: "LM Studio",
 		model: "local-model",
@@ -39,7 +39,7 @@ test("provider correctly initializes generic local openai-compatible provider wi
 		],
 	};
 
-	const modelInstance = getProviderModel(mockConfig, "local-model");
+	const modelInstance = await getProviderModel(mockConfig, "local-model");
 
 	t.truthy(modelInstance);
 	t.is(modelInstance.modelId, "local-model");

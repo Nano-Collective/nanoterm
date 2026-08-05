@@ -3,7 +3,6 @@ import { generateCommand } from "./generate.js";
 import { promptApproval } from "./approval.js";
 import { executeCommand } from "./execute.js";
 import { loadConfig } from "./config.js";
-import { runConfigWizard } from "./setup.js";
 
 export async function runCLI(args: string[]) {
 	const program = new Command();
@@ -33,6 +32,7 @@ export async function runCLI(args: string[]) {
 			}
 
 			if (request === "config") {
+				const { runConfigWizard } = await import("./setup.js");
 				await runConfigWizard();
 				return;
 			}

@@ -1,16 +1,10 @@
-import { createOpenAI } from "@ai-sdk/openai";
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { createMistral } from "@ai-sdk/mistral";
-import { createCohere } from "@ai-sdk/cohere";
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { NanotermConfig } from "./config.js";
 
 // biome-ignore lint/suspicious/noExplicitAny: Vercel AI SDK version mismatch requires any
-export function getProviderModel(
+export async function getProviderModel(
 	config: NanotermConfig,
 	modelName: string,
-): any {
+): Promise<any> {
 	const providerName = config.provider.toLowerCase();
 
 	// Check if this provider is explicitly configured in nanocoder.providers
@@ -25,27 +19,35 @@ export function getProviderModel(
 
 		switch (sdk) {
 			case "anthropic": {
+				const { createAnthropic } = await import("@ai-sdk/anthropic");
 				const anthropic = createAnthropic({ apiKey, baseURL });
 				return anthropic(modelName);
 			}
 			case "google": {
+				const { createGoogleGenerativeAI } = await import("@ai-sdk/google");
 				const google = createGoogleGenerativeAI({ apiKey, baseURL });
 				return google(modelName);
 			}
 			case "openai": {
+				const { createOpenAI } = await import("@ai-sdk/openai");
 				const openai = createOpenAI({ apiKey, baseURL });
 				return openai(modelName);
 			}
 			case "mistral": {
+				const { createMistral } = await import("@ai-sdk/mistral");
 				const mistral = createMistral({ apiKey, baseURL });
 				return mistral(modelName);
 			}
 			case "cohere": {
+				const { createCohere } = await import("@ai-sdk/cohere");
 				const cohere = createCohere({ apiKey, baseURL });
 				return cohere(modelName);
 			}
 
 			default: {
+				const { createOpenAICompatible } = await import(
+					"@ai-sdk/openai-compatible"
+				);
 				const compatible = createOpenAICompatible({
 					name: customConfig.name,
 					apiKey: apiKey || "dummy-key",
@@ -59,26 +61,34 @@ export function getProviderModel(
 	// Fallback to basic environment-based native providers if no custom config found
 	switch (providerName) {
 		case "openai": {
+			const { createOpenAI } = await import("@ai-sdk/openai");
 			const openai = createOpenAI();
 			return openai(modelName);
 		}
 		case "anthropic": {
+			const { createAnthropic } = await import("@ai-sdk/anthropic");
 			const anthropic = createAnthropic();
 			return anthropic(modelName);
 		}
 		case "google": {
+			const { createGoogleGenerativeAI } = await import("@ai-sdk/google");
 			const google = createGoogleGenerativeAI();
 			return google(modelName);
 		}
 		case "mistral": {
+			const { createMistral } = await import("@ai-sdk/mistral");
 			const mistral = createMistral();
 			return mistral(modelName);
 		}
 		case "cohere": {
+			const { createCohere } = await import("@ai-sdk/cohere");
 			const cohere = createCohere();
 			return cohere(modelName);
 		}
 		case "ollama": {
+			const { createOpenAICompatible } = await import(
+				"@ai-sdk/openai-compatible"
+			);
 			const compatible = createOpenAICompatible({
 				name: "Ollama",
 				apiKey: "dummy-key",
@@ -87,6 +97,7 @@ export function getProviderModel(
 			return compatible(modelName);
 		}
 		default: {
+			const { createOpenAI } = await import("@ai-sdk/openai");
 			const defaultProvider = createOpenAI();
 			return defaultProvider(modelName);
 		}

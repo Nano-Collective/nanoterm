@@ -12,7 +12,7 @@ export async function generateCommand(
 ): Promise<string> {
 	const env = getEnvironmentContext();
 	const session = loadSessionContext();
-	const model = getProviderModel(config, config.model);
+	const model = await getProviderModel(config, config.model);
 	const rawSystemPrompt = buildSystemPrompt(env, session);
 
 	const sessionMap: Record<string, string> = {};
@@ -56,7 +56,7 @@ export async function explainCommand(
 	command: string,
 	config: NanotermConfig,
 ): Promise<string> {
-	const model = getProviderModel(config, config.model);
+	const model = await getProviderModel(config, config.model);
 	const rawSystemPrompt = buildExplainPrompt();
 
 	const sessionMap: Record<string, string> = {};

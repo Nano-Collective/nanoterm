@@ -265,7 +265,7 @@ export async function runConfigWizard() {
 					],
 				};
 
-				const modelInstance = getProviderModel(mockConfig, model);
+				const modelInstance = await getProviderModel(mockConfig, model);
 
 				await generateText({
 					model: modelInstance,
