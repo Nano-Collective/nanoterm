@@ -4,7 +4,11 @@ import os from "node:os";
 import { select, input, password } from "@inquirer/prompts";
 import { generateText } from "ai";
 import { getProviderModel } from "./provider.js";
-import { type NanotermConfig, getPlatformConfigDir } from "./config.js";
+import {
+	type NanotermConfig,
+	type ProviderConfig,
+	getPlatformConfigDir,
+} from "./config.js";
 
 const LOCAL_PROVIDERS = [
 	{
@@ -123,7 +127,7 @@ export async function runConfigWizard() {
 			}
 		}
 
-		const existingProviders = existingConfig.providers || [];
+		const existingProviders: ProviderConfig[] = existingConfig.providers || [];
 
 		if (existingProviders.length > 0) {
 			const action = await select({
@@ -145,7 +149,8 @@ export async function runConfigWizard() {
 
 				const chosenProvider = existingProviders.find(
 					(p) => p.name === chosenName,
-				)!;
+				);
+				if (!chosenProvider) throw new Error("Provider not found");
 
 				let models = chosenProvider.models || [];
 				if (models.length === 0) {
@@ -202,7 +207,8 @@ export async function runConfigWizard() {
 			})),
 		});
 
-		const selectedProvider = PROVIDERS.find((p) => p.id === providerId)!;
+		const selectedProvider = PROVIDERS.find((p) => p.id === providerId);
+		if (!selectedProvider) throw new Error("Provider not found");
 
 		let baseUrl = selectedProvider.defaultBaseUrl;
 		if (selectedProvider.id === "custom") {
@@ -301,7 +307,7 @@ export async function runConfigWizard() {
 		const providerName = selectedProvider.name;
 
 		// Remove existing provider if updating
-		const filteredProviders = existingProviders.filter(
+		const filteredProviders: ProviderConfig[] = existingProviders.filter(
 			(p) => p.name !== providerName,
 		);
 		filteredProviders.push({
@@ -324,8 +330,8 @@ export async function runConfigWizard() {
 		console.log(
 			`\n\x1b[32mSuccess! Configuration saved to ${configPath}\x1b[0m\n`,
 		);
-	} catch (error: any) {
-		if (error.name === "ExitPromptError") {
+	} catch (error: unknown) {
+		if (error instanceof Error && error.name === "ExitPromptError") {
 			console.log("\n\x1b[33mSetup cancelled.\x1b[0m\n");
 			process.exit(0);
 		} else {

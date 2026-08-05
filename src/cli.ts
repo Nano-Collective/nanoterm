@@ -3,7 +3,10 @@ import { generateCommand } from "./generate.js";
 import { promptApproval } from "./approval.js";
 import { executeCommand } from "./execute.js";
 import { loadConfig } from "./config.js";
+import { createRequire } from "node:module";
 
+const require = createRequire(import.meta.url);
+const pkg = require("../package.json");
 export async function runCLI(args: string[]) {
 	const program = new Command();
 	const config = loadConfig();
@@ -11,12 +14,17 @@ export async function runCLI(args: string[]) {
 	program
 		.name("nanoterm")
 		.description("An ultra-lightweight AI terminal companion")
+		.version(pkg.version)
 		.allowUnknownOption()
-		.enablePositionalOptions()
-		.addHelpText(
-			"after",
-			"\nCommands:\n  config      Run the interactive setup wizard to configure API keys\n",
-		);
+		.enablePositionalOptions();
+
+	program
+		.command("config")
+		.description("Run the interactive setup wizard to configure API keys")
+		.action(async () => {
+			const { runConfigWizard } = await import("./setup.js");
+			await runConfigWizard();
+		});
 
 	program
 		.argument(
@@ -28,12 +36,6 @@ export async function runCLI(args: string[]) {
 
 			if (!request) {
 				program.help();
-				return;
-			}
-
-			if (request === "config") {
-				const { runConfigWizard } = await import("./setup.js");
-				await runConfigWizard();
 				return;
 			}
 

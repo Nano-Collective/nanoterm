@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
-interface ProviderConfig {
+export interface ProviderConfig {
 	name: string;
 	baseUrl?: string;
 	apiKey?: string;
