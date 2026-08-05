@@ -1,8 +1,15 @@
 {
-	"name": "nanoterm",
+	"name": "@nanocollective/nanoterm",
 	"version": "1.0.0",
-	"description": "",
-	"main": "index.js",
+	"description": "An ultra-lightweight AI terminal companion",
+	"publishConfig": {
+		"access": "public"
+	},
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE"
+	],
 	"scripts": {
 		"build": "rm -rf dist && tsup src/index.ts --format esm --clean",
 		"prepublishOnly": "pnpm run build",
@@ -26,8 +33,15 @@
 		"type": "git",
 		"url": "git+https://github.com/Nano-Collective/nanoterm.git"
 	},
-	"keywords": [],
-	"author": "",
+	"keywords": [
+		"terminal",
+		"cli",
+		"ai",
+		"llm",
+		"shell",
+		"companion"
+	],
+	"author": "Nano Collective",
 	"license": "ISC",
 	"bugs": {
 		"url": "https://github.com/Nano-Collective/nanoterm/issues"
