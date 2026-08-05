@@ -4,11 +4,10 @@ Built by the [Nano Collective](https://nanocollective.org) — a community colle
 
 `nanoterm` is an ultra-lightweight, high-performance AI terminal companion that translates natural language requests into bash commands securely and instantly.
 
-![Build Status](https://github.com/Nano-Collective/nanoterm/raw/main/badges/build.svg)
-![Coverage](https://github.com/Nano-Collective/nanoterm/raw/main/badges/coverage.svg)
-![Version](https://github.com/Nano-Collective/nanoterm/raw/main/badges/npm-version.svg)
-![Downloads](https://github.com/Nano-Collective/nanoterm/raw/main/badges/npm-downloads-monthly.svg)
-![License](https://github.com/Nano-Collective/nanoterm/raw/main/badges/npm-license.svg)
+![Build Status](https://img.shields.io/github/actions/workflow/status/Nano-Collective/nanoterm/build.yml?branch=main)
+![npm version](https://img.shields.io/npm/v/@nanocollective/nanoterm.svg)
+![npm downloads](https://img.shields.io/npm/dm/@nanocollective/nanoterm.svg)
+![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)
 
 It allows you to bypass writing complex regex, `find`, `awk`, or `sed` commands by simply asking your terminal what you want it to do in plain English. `nanoterm` connects directly to your chosen provider (OpenAI, Anthropic, Google, Atlas Cloud) via the Vercel AI SDK.
 
@@ -18,9 +17,9 @@ It allows you to bypass writing complex regex, `find`, `awk`, or `sed` commands 
 
 **What it does:**
 - Automatically scrubs sensitive data (emails, IPs, phone numbers) before sending your prompt to a cloud LLM, ensuring your privacy.
-- Uses strict safety guardrails to proactively block destructive commands (like `rm -rf /` or recursive `chmod`).
+- Commands matching common destructive patterns are clearly flagged and require explicit confirmation.
 - Interactively prompts you for approval before executing any command on your machine.
-- Seamlessly integrates with the Nanocoder and Repokit ecosystem for unified API configuration.
+- Shares configuration seamlessly with the Nanocoder ecosystem.
 
 **What it does not do:**
 - It does not blindly execute commands without your explicit consent.
@@ -61,6 +60,20 @@ Proposed command:
 
 Execute? [y/N/edit/?]: y
 ```
+
+When prompted to execute, you have several options:
+- Press `y` to execute the command.
+- Press `Enter` (or `N`) to safely **abort** (this is the default).
+- Type `edit` to manually modify the command before it runs.
+- Type `?` to get a concise explanation of what the command does before you decide.
+
+### Session Chaining
+
+`nanoterm` automatically feeds the output (`stdout`/`stderr`) of your last executed command into the AI's context for your next request. This allows for seamless session-chaining!
+
+For example:
+1. `nanoterm run the tests`
+2. `nanoterm fix the failing test in the output` (The AI already knows what failed!)
 
 You can even omit the quotes entirely! `nanoterm list all open ports` works seamlessly out of the box.
 
