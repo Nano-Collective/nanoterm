@@ -18,7 +18,7 @@ function getSessionFilePath(): string {
 	return path.join(os.tmpdir(), `nanoterm-session-${ppid}.json`);
 }
 
-export function cleanupStaleSessions(): void {
+function cleanupStaleSessions(): void {
 	try {
 		const tmpDir = os.tmpdir();
 		// Fire-and-forget async cleanup so we don't block the CLI
@@ -85,12 +85,12 @@ export function loadSessionContext(): SessionContext | null {
 		if (fs.existsSync(sessionFilePath)) {
 			const data = fs.readFileSync(sessionFilePath, "utf-8");
 			const context = JSON.parse(data) as SessionContext;
-			
+
 			if (Date.now() - (context.timestamp || 0) > MAX_AGE_MS) {
 				fs.unlinkSync(sessionFilePath);
 				return null;
 			}
-			
+
 			return context;
 		}
 	} catch (err: unknown) {

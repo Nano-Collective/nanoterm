@@ -11,16 +11,16 @@ export async function promptApproval(
 	let currentCommand = command;
 
 	while (true) {
-		const isDangerous = currentCommand ? isDangerousCommand(currentCommand) : false;
+		const isDangerous = currentCommand
+			? isDangerousCommand(currentCommand)
+			: false;
 
 		if (isDangerous) {
 			console.log(
 				`\n\x1b[31;1m[WARNING] This command appears to be destructive.\x1b[0m`,
 			);
 		} else if (!currentCommand) {
-			console.log(
-				`\n\x1b[33m[WARNING] The command is empty.\x1b[0m`,
-			);
+			console.log(`\n\x1b[33m[WARNING] The command is empty.\x1b[0m`);
 		}
 
 		const rl = readline.createInterface({
@@ -30,7 +30,9 @@ export async function promptApproval(
 
 		const promptText = isDangerous
 			? `Execute? Type 'yes' to confirm [yes/N/edit/?]: `
-			: (!currentCommand ? `Command is empty [edit/abort]: ` : `Execute? [y/N/edit/?]: `);
+			: !currentCommand
+				? `Command is empty [edit/abort]: `
+				: `Execute? [y/N/edit/?]: `;
 
 		const answer = await new Promise<string>((resolve) => {
 			rl.question(`\n${promptText}`, (ans: string) => {
@@ -45,11 +47,16 @@ export async function promptApproval(
 		if (
 			currentCommand &&
 			((!isDangerous && (lowerAnswer === "y" || lowerAnswer === "yes")) ||
-			(isDangerous && lowerAnswer === "yes"))
+				(isDangerous && lowerAnswer === "yes"))
 		) {
 			return currentCommand;
-		} else if (!currentCommand && (lowerAnswer === "y" || lowerAnswer === "yes")) {
-			console.log(`\n\x1b[33mCannot execute an empty command. Please edit or abort.\x1b[0m`);
+		} else if (
+			!currentCommand &&
+			(lowerAnswer === "y" || lowerAnswer === "yes")
+		) {
+			console.log(
+				`\n\x1b[33mCannot execute an empty command. Please edit or abort.\x1b[0m`,
+			);
 			// loop continues
 		} else if (isDangerous && lowerAnswer === "y") {
 			console.log(

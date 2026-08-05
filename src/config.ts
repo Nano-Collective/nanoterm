@@ -71,15 +71,19 @@ export function loadConfig(): NanotermConfig {
 					apiKey: resolveEnvVars(p.apiKey),
 				}));
 
-				const fallbackProvider = providers.length > 0 ? providers[0].name : "openai";
+				const fallbackProvider =
+					providers.length > 0 ? providers[0].name : "openai";
 				const fallbackModel =
-					providers.length > 0 && providers[0].models && providers[0].models.length > 0
+					providers.length > 0 &&
+					providers[0].models &&
+					providers[0].models.length > 0
 						? providers[0].models[0]
 						: "gpt-4o";
 
 				const provider =
 					resolveEnvVars(
-						config.provider || config.nanocoder?.modeProviders?.normal?.provider,
+						config.provider ||
+							config.nanocoder?.modeProviders?.normal?.provider,
 					) || fallbackProvider;
 				const model =
 					resolveEnvVars(

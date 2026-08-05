@@ -48,16 +48,16 @@ export async function runCLI(args: string[]) {
 				if (approvedCommand) {
 					try {
 						const exitCode = await executeCommand(approvedCommand);
-						process.exit(exitCode);
+						process.exitCode = exitCode;
 					} catch (execErr: unknown) {
 						const msg =
 							execErr instanceof Error ? execErr.message : String(execErr);
 						console.error(`\nExecution failed: ${msg}`);
-						process.exit(1);
+						process.exitCode = 1;
 					}
 				} else {
 					console.log(`\nAborted.`);
-					process.exit(0);
+					process.exitCode = 0;
 				}
 			} catch (error: unknown) {
 				const msg = error instanceof Error ? error.message : String(error);
@@ -74,7 +74,7 @@ export async function runCLI(args: string[]) {
 				} else {
 					console.error(`\n\x1b[31mError generating command: ${msg}\x1b[0m\n`);
 				}
-				process.exit(1);
+				process.exitCode = 1;
 			}
 		});
 

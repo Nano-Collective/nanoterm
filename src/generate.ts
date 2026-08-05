@@ -40,7 +40,10 @@ export function sanitizeCommand(command: string): string {
 	if (codeBlockMatch) {
 		finalCommand = codeBlockMatch[1].trim();
 	} else {
-		finalCommand = finalCommand.replace(/^```[a-zA-Z]*\n?/i, "").replace(/\n?```$/i, "").trim();
+		finalCommand = finalCommand
+			.replace(/^```[a-zA-Z]*\n?/i, "")
+			.replace(/\n?```$/i, "")
+			.trim();
 	}
 
 	// Strip leading shell prompts
