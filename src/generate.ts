@@ -3,7 +3,11 @@ import { getEnvironmentContext } from "./env.js";
 import { loadSessionContext } from "./session.js";
 import type { NanotermConfig } from "./config.js";
 import { getProviderModel } from "./provider.js";
-import { buildSystemPrompt, buildExplainPrompt } from "./prompt.js";
+import {
+	buildSystemPrompt,
+	buildUserPrompt,
+	buildExplainPrompt,
+} from "./prompt.js";
 import { scrubPrompt, rehydratePrompt } from "./privacy.js";
 
 export async function generateCommand(
@@ -13,13 +17,14 @@ export async function generateCommand(
 	const env = getEnvironmentContext();
 	const session = loadSessionContext();
 	const model = await getProviderModel(config, config.model);
-	const rawSystemPrompt = buildSystemPrompt(env, session);
+	const rawSystemPrompt = buildSystemPrompt(env);
+	const rawUserPrompt = buildUserPrompt(request, session);
 
 	const sessionMap: Record<string, string> = {};
 
 	// Scrub the prompts before sending to cloud providers
 	const systemPrompt = scrubPrompt(rawSystemPrompt, config, sessionMap);
-	const safeRequest = scrubPrompt(request, config, sessionMap);
+	const safeRequest = scrubPrompt(rawUserPrompt, config, sessionMap);
 
 	const { text } = await generateText({
 		model,
@@ -28,7 +33,7 @@ export async function generateCommand(
 		temperature: 0,
 	});
 
-	let rawCommand = rehydratePrompt(text.trim(), config, sessionMap);
+	const rawCommand = rehydratePrompt(text.trim(), config, sessionMap);
 	return sanitizeCommand(rawCommand);
 }
 

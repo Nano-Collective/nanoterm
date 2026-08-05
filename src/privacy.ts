@@ -1,10 +1,36 @@
 import { scrub, rehydrate } from "@nanocollective/prompt-scrub";
 import type { NanotermConfig } from "./config.js";
 
-function isLocalProvider(config: NanotermConfig | string): boolean {
+const LOCAL_PROVIDER_NAMES = new Set([
+	"ollama",
+	"lm studio",
+	"llama.cpp server",
+	"mlx server",
+]);
+
+function isLocalHostname(hostname: string): boolean {
+	const normalized = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+	if (
+		normalized === "localhost" ||
+		normalized === "::1" ||
+		normalized === "0.0.0.0"
+	) {
+		return true;
+	}
+
+	const octets = normalized.split(".").map(Number);
+	return (
+		octets.length === 4 &&
+		octets.every(
+			(octet) => Number.isInteger(octet) && octet >= 0 && octet <= 255,
+		) &&
+		octets[0] === 127
+	);
+}
+
+export function isLocalProvider(config: NanotermConfig | string): boolean {
 	if (typeof config === "string") {
-		const name = config.toLowerCase();
-		return name === "ollama" || name === "lm studio" || name.includes("local");
+		return LOCAL_PROVIDER_NAMES.has(config.toLowerCase());
 	}
 
 	const providerName = config.provider.toLowerCase();
@@ -13,19 +39,14 @@ function isLocalProvider(config: NanotermConfig | string): boolean {
 	);
 
 	if (customConfig?.baseUrl) {
-		const url = customConfig.baseUrl.toLowerCase();
-		return (
-			url.includes("localhost") ||
-			url.includes("127.0.0.1") ||
-			url.includes("0.0.0.0")
-		);
+		try {
+			return isLocalHostname(new URL(customConfig.baseUrl).hostname);
+		} catch {
+			return false;
+		}
 	}
 
-	return (
-		providerName === "ollama" ||
-		providerName === "lm studio" ||
-		providerName.includes("local")
-	);
+	return LOCAL_PROVIDER_NAMES.has(providerName);
 }
 
 export function scrubPrompt(

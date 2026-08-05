@@ -1,5 +1,10 @@
 import test from "ava";
-import { resolveEnvVars, getPlatformConfigDir } from "../src/config.js";
+import {
+	resolveEnvVars,
+	getPlatformConfigDir,
+	writeConfigFile,
+} from "../src/config.js";
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
@@ -68,3 +73,21 @@ test.serial(
 		Object.defineProperty(process, "platform", { value: originalPlatform });
 	},
 );
+
+test("writeConfigFile enforces owner-only permissions for new and existing files", (t) => {
+	const directory = fs.mkdtempSync(
+		path.join(os.tmpdir(), "nanoterm-config-test-"),
+	);
+	const configPath = path.join(directory, "agents.config.json");
+	fs.writeFileSync(configPath, "{}", { mode: 0o644 });
+
+	writeConfigFile(configPath, { provider: "openai", model: "gpt-test" });
+
+	t.is(fs.statSync(directory).mode & 0o777, 0o700);
+	t.is(fs.statSync(configPath).mode & 0o777, 0o600);
+	t.deepEqual(JSON.parse(fs.readFileSync(configPath, "utf-8")), {
+		provider: "openai",
+		model: "gpt-test",
+	});
+	fs.rmSync(directory, { recursive: true });
+});

@@ -9,13 +9,20 @@ export interface SessionContext {
 	timestamp: number;
 }
 
-const MAX_OUTPUT_LENGTH = 2000;
+export const MAX_OUTPUT_LENGTH = 2000;
 const MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes
 
 function getSessionFilePath(): string {
 	// Use the parent shell process ID to scope the session to the current terminal tab
 	const ppid = process.ppid;
 	return path.join(os.tmpdir(), `nanoterm-session-${ppid}.json`);
+}
+
+export function appendOutputTail(current: string, chunk: string): string {
+	const combined = current + chunk;
+	return combined.length > MAX_OUTPUT_LENGTH
+		? combined.slice(-MAX_OUTPUT_LENGTH)
+		: combined;
 }
 
 function cleanupStaleSessions(): void {
@@ -36,7 +43,7 @@ function cleanupStaleSessions(): void {
 				}
 			}
 		});
-	} catch (e) {
+	} catch {
 		// Ignore cleanup errors
 	}
 }

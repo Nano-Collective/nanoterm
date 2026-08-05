@@ -16,6 +16,22 @@ export interface NanotermConfig {
 	providers: ProviderConfig[];
 }
 
+export function writeConfigFile(
+	configPath: string,
+	config: Partial<NanotermConfig>,
+): void {
+	const configDir = path.dirname(configPath);
+	fs.mkdirSync(configDir, { recursive: true, mode: 0o700 });
+	fs.chmodSync(configDir, 0o700);
+	if (fs.existsSync(configPath)) fs.chmodSync(configPath, 0o600);
+	fs.writeFileSync(configPath, JSON.stringify(config, null, 2), {
+		encoding: "utf-8",
+		mode: 0o600,
+	});
+	// writeFileSync's mode is ignored for an existing file, so enforce it explicitly.
+	fs.chmodSync(configPath, 0o600);
+}
+
 export function getPlatformConfigDir(appName: string): string {
 	if (process.platform === "darwin") {
 		return path.join(os.homedir(), "Library", "Preferences", appName);
@@ -33,7 +49,7 @@ export function resolveEnvVars(value: string | undefined): string | undefined {
 	if (!value) return value;
 	return value.replace(
 		/\$(?:([A-Za-z0-9_]+)|\{([A-Za-z0-9_]+)(?::-([^}]*))?\})/g,
-		(match, p1, p2, p3) => {
+		(_match, p1, p2, p3) => {
 			const varName = p1 || p2;
 			const envVal = process.env[varName];
 			if (envVal) return envVal;

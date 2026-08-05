@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
 import { select, input, password } from "@inquirer/prompts";
 import { generateText } from "ai";
 import { getProviderModel } from "./provider.js";
@@ -8,9 +7,19 @@ import {
 	type NanotermConfig,
 	type ProviderConfig,
 	getPlatformConfigDir,
+	writeConfigFile,
 } from "./config.js";
 
-const LOCAL_PROVIDERS = [
+interface ProviderOption {
+	id: string;
+	name: string;
+	defaultBaseUrl: string;
+	models: string[];
+	sdkProvider: string;
+	isLocal?: boolean;
+}
+
+const LOCAL_PROVIDERS: ProviderOption[] = [
 	{
 		id: "ollama",
 		name: "Ollama",
@@ -45,7 +54,7 @@ const LOCAL_PROVIDERS = [
 	},
 ];
 
-const CLOUD_PROVIDERS = [
+const CLOUD_PROVIDERS: ProviderOption[] = [
 	{
 		id: "openai",
 		name: "OpenAI",
@@ -113,7 +122,7 @@ export async function runConfigWizard() {
 	try {
 		const configDir = getPlatformConfigDir("nanoterm");
 		if (!fs.existsSync(configDir)) {
-			fs.mkdirSync(configDir, { recursive: true });
+			fs.mkdirSync(configDir, { recursive: true, mode: 0o700 });
 		}
 
 		const configPath = path.join(configDir, "agents.config.json");
@@ -176,11 +185,7 @@ export async function runConfigWizard() {
 				existingConfig.provider = chosenName;
 				existingConfig.model = chosenModel;
 
-				fs.writeFileSync(
-					configPath,
-					JSON.stringify(existingConfig, null, 2),
-					"utf-8",
-				);
+				writeConfigFile(configPath, existingConfig);
 				console.log(
 					`\n\x1b[32mSuccess! Active provider set to ${chosenName} (${chosenModel})\x1b[0m\n`,
 				);
@@ -215,7 +220,7 @@ export async function runConfigWizard() {
 			baseUrl = await input({
 				message: "Enter Base URL (e.g. https://api.together.ai/v1): ",
 			});
-		} else if ((selectedProvider as any).isLocal) {
+		} else if (selectedProvider.isLocal) {
 			const customBaseUrl = await input({
 				message: `Enter Base URL (default: ${baseUrl}): `,
 				default: baseUrl,
@@ -241,7 +246,7 @@ export async function runConfigWizard() {
 		let apiKey = "";
 		let isValid = false;
 
-		if ((selectedProvider as any).isLocal) {
+		if (selectedProvider.isLocal) {
 			console.log(
 				"\x1b[36m\nLocal provider selected. Skipping API key validation...\x1b[0m",
 			);
@@ -271,36 +276,17 @@ export async function runConfigWizard() {
 					],
 				};
 
-				const modelInstance = await getProviderModel(mockConfig, model);
-
-				await generateText({
-					model: modelInstance,
-					prompt: "Respond with the word OK",
-				});
+				await validateProviderCredentials(mockConfig);
 
 				isValid = true;
 				console.log("\x1b[32mValidation successful!\x1b[0m");
 			} catch (error: unknown) {
 				const msg = error instanceof Error ? error.message : String(error);
 
-				const isWarningOnly =
-					msg.includes("400") ||
-					msg.includes("404") ||
-					msg.toLowerCase().includes("bad request") ||
-					msg.toLowerCase().includes("not found");
-
-				if (!isWarningOnly) {
-					console.log(`\n\x1b[31mValidation failed: ${msg}\x1b[0m`);
-					console.log(
-						"\x1b[33mPlease check your API key and try again.\x1b[0m\n",
-					);
-				} else {
-					console.log(`\n\x1b[33mValidation warning: ${msg}\x1b[0m`);
-					console.log(
-						"\x1b[32mAPI key was accepted (authentication succeeded). Proceeding...\x1b[0m\n",
-					);
-					isValid = true;
-				}
+				console.log(`\n\x1b[31mValidation failed: ${msg}\x1b[0m`);
+				console.log(
+					"\x1b[33mPlease check the API key, base URL, and model, then try again.\x1b[0m\n",
+				);
 			}
 		}
 
@@ -325,7 +311,7 @@ export async function runConfigWizard() {
 			providers: filteredProviders,
 		};
 
-		fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2), "utf-8");
+		writeConfigFile(configPath, newConfig);
 
 		console.log(
 			`\n\x1b[32mSuccess! Configuration saved to ${configPath}\x1b[0m\n`,
@@ -338,4 +324,17 @@ export async function runConfigWizard() {
 			throw error;
 		}
 	}
+}
+
+type GenerateProbe = typeof generateText;
+
+export async function validateProviderCredentials(
+	config: NanotermConfig,
+	probe: GenerateProbe = generateText,
+): Promise<void> {
+	const model = await getProviderModel(config, config.model);
+	await probe({
+		model,
+		prompt: "Respond with the word OK",
+	});
 }
