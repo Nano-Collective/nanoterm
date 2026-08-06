@@ -29,6 +29,14 @@ It allows you to bypass writing complex regex, `find`, `awk`, or `sed` commands 
 > [!IMPORTANT]
 > Always review the generated bash command carefully before pressing `y` (Yes) to execute. You always have the option to press `edit` to safely modify it before it runs!
 
+### Security model
+
+- Commands that do not need shell features are executed directly, without a shell. Pipelines, redirects, expansions, and shell built-ins still require the configured shell.
+- Destructive and dynamically constructed commands require typing the full word `yes`; this is an additional review boundary, not a sandbox.
+- Cloud prompts are scrubbed before transmission. Scrubbing is skipped only for explicitly known local providers or URLs whose parsed hostname is a loopback address.
+- Recent command output is bounded, expires after ten minutes, and is sent to the model as untrusted user-context data rather than as a system instruction.
+- Provider credentials and their configuration directory are restricted to the current user on platforms that support POSIX permissions.
+
 ## Quick Start
 
 Install globally to use the CLI:

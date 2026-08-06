@@ -40,6 +40,27 @@ test("isDangerousCommand flags recursive removals", (t) => {
 	t.false(isDangerousCommand("rm file.txt"));
 });
 
+test("isDangerousCommand cannot be bypassed with paths, wrappers, or long flags", (t) => {
+	t.true(isDangerousCommand("/bin/rm -rf /tmp/project"));
+	t.true(isDangerousCommand("command rm -rf /tmp/project"));
+	t.true(isDangerousCommand("env MODE=test rm --recursive /tmp/project"));
+	t.true(isDangerousCommand("sudo -u root /bin/rm --recursive /tmp/project"));
+	t.true(
+		isDangerousCommand("sudo --user root /bin/rm --recursive /tmp/project"),
+	);
+	t.true(isDangerousCommand("chmod --recursive 777 /tmp/project"));
+});
+
+test("isDangerousCommand inspects newlines and treats dynamic shell code conservatively", (t) => {
+	t.true(isDangerousCommand("echo safe\nrm -rf /tmp/project"));
+	t.true(isDangerousCommand("bash -c 'rm -rf /tmp/project'"));
+	t.true(isDangerousCommand("eval 'rm -rf /tmp/project'"));
+	t.true(isDangerousCommand("echo $(cat command.txt)"));
+	t.true(isDangerousCommand("find . -exec rm -f {} ;"));
+	t.true(isDangerousCommand("node -e 'runSomeCode()'"));
+	t.true(isDangerousCommand("busybox rm --recursive /tmp/project"));
+});
+
 test("isDangerousCommand flags recursive chmod and chown", (t) => {
 	t.true(isDangerousCommand("chmod -R 777 ."));
 	t.true(isDangerousCommand("chown -R user:group /var"));

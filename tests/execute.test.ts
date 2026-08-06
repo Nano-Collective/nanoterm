@@ -1,5 +1,5 @@
 import test from "ava";
-import { isInteractiveCommand } from "../src/execute.js";
+import { isInteractiveCommand, parseDirectCommand } from "../src/execute.js";
 
 test("isInteractiveCommand › detects common interactive editors", (t) => {
 	t.true(isInteractiveCommand("vim"));
@@ -33,4 +33,25 @@ test("isInteractiveCommand › does not flag standard shell commands as interact
 test("isInteractiveCommand › handles leading and trailing whitespace", (t) => {
 	t.true(isInteractiveCommand("  vim  "));
 	t.false(isInteractiveCommand("  ls  "));
+});
+
+test("parseDirectCommand avoids a shell for commands that need no expansion", (t) => {
+	t.deepEqual(parseDirectCommand("git status --short"), {
+		command: "git",
+		args: ["status", "--short"],
+	});
+	t.deepEqual(parseDirectCommand("find . -name '*.png'"), {
+		command: "find",
+		args: [".", "-name", "*.png"],
+	});
+});
+
+test("parseDirectCommand retains shell execution only for shell syntax", (t) => {
+	t.is(parseDirectCommand("printf '%s\\n' *.png"), null);
+	t.is(parseDirectCommand("echo hello | grep hello"), null);
+	t.is(parseDirectCommand("cd /tmp"), null);
+	t.is(parseDirectCommand("NAME=value command"), null);
+	t.is(parseDirectCommand("echo 'unterminated"), null);
+	t.is(parseDirectCommand('echo "$HOME"'), null);
+	t.is(parseDirectCommand('echo "$(date)"'), null);
 });

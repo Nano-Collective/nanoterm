@@ -1,5 +1,10 @@
 import test from "ava";
-import { saveSessionContext, loadSessionContext } from "../src/session.js";
+import {
+	saveSessionContext,
+	loadSessionContext,
+	appendOutputTail,
+	MAX_OUTPUT_LENGTH,
+} from "../src/session.js";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -56,4 +61,15 @@ test("loadSessionContext ignores and unlinks stale sessions", (t) => {
 	t.is(loaded, null, "Should return null for stale sessions");
 
 	t.false(fs.existsSync(sessionFilePath), "Stale session should be unlinked");
+});
+
+test("appendOutputTail bounds captured output while retaining the newest data", (t) => {
+	let captured = "";
+	for (let index = 0; index < 100; index++) {
+		captured = appendOutputTail(captured, `${index}:`.padEnd(100, "x"));
+	}
+
+	t.is(captured.length, MAX_OUTPUT_LENGTH);
+	t.true(captured.endsWith("99:".padEnd(100, "x")));
+	t.false(captured.includes("0:".padEnd(100, "x")));
 });

@@ -1,10 +1,12 @@
 import type { NanotermConfig } from "./config.js";
+import type { LanguageModel } from "ai";
 
-// biome-ignore lint/suspicious/noExplicitAny: Vercel AI SDK version mismatch requires any
+export type ProviderModel = Exclude<LanguageModel, string>;
+
 export async function getProviderModel(
 	config: NanotermConfig,
 	modelName: string,
-): Promise<any> {
+): Promise<ProviderModel> {
 	const providerName = config.provider.toLowerCase();
 
 	// Check if this provider is explicitly configured in nanocoder.providers
