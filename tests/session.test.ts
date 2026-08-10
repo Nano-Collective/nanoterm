@@ -73,3 +73,26 @@ test("appendOutputTail bounds captured output while retaining the newest data", 
 	t.true(captured.endsWith("99:".padEnd(100, "x")));
 	t.false(captured.includes("0:".padEnd(100, "x")));
 });
+
+test("saveSessionContext enforces owner-only permissions for existing files", (t) => {
+	const sessionFilePath = path.join(
+		os.tmpdir(),
+		`nanoterm-session-${process.ppid}.json`,
+	);
+
+	try {
+		// Pre-create the file with permissive modes
+		fs.writeFileSync(sessionFilePath, "{}", { mode: 0o644 });
+
+		saveSessionContext('echo "test"', "test\n", "");
+
+		const stats = fs.statSync(sessionFilePath);
+		const mode = stats.mode & 0o777; // get only permission bits
+		t.is(mode, 0o600, "Session file should have 0600 permissions");
+	} finally {
+		// Cleanup
+		if (fs.existsSync(sessionFilePath)) {
+			fs.unlinkSync(sessionFilePath);
+		}
+	}
+});

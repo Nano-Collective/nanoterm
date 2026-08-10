@@ -78,6 +78,8 @@ export function saveSessionContext(
 			encoding: "utf-8",
 			mode: 0o600,
 		});
+		// writeFileSync's mode is ignored for an existing file, so enforce it explicitly.
+		fs.chmodSync(sessionFilePath, 0o600);
 	} catch (err: unknown) {
 		const msg = err instanceof Error ? err.message : String(err);
 		console.warn(`\n[WARN] Failed to save session context: ${msg}`);
