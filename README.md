@@ -4,10 +4,14 @@ Built by the [Nano Collective](https://nanocollective.org) — a community colle
 
 `nanoterm` is an ultra-lightweight, high-performance AI terminal companion that translates natural language requests into bash commands securely and instantly.
 
-![Build Status](https://img.shields.io/github/actions/workflow/status/Nano-Collective/nanoterm/build.yml?branch=main)
-![npm version](https://img.shields.io/npm/v/@nanocollective/nanoterm.svg)
-![npm downloads](https://img.shields.io/npm/dm/@nanocollective/nanoterm.svg)
-![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)
+![Build Status](https://github.com/Nano-Collective/nanoterm/raw/main/badges/build.svg)
+![Coverage](https://github.com/Nano-Collective/nanoterm/raw/main/badges/coverage.svg)
+![Version](https://github.com/Nano-Collective/nanoterm/raw/main/badges/npm-version.svg)
+![NPM Downloads](https://github.com/Nano-Collective/nanoterm/raw/main/badges/npm-downloads-monthly.svg)
+![Stars](https://github.com/Nano-Collective/nanoterm/raw/main/badges/stars.svg)
+![License](https://github.com/Nano-Collective/nanoterm/raw/main/badges/npm-license.svg)
+![Repo Size](https://github.com/Nano-Collective/nanoterm/raw/main/badges/repo-size.svg)
+![Forks](https://github.com/Nano-Collective/nanoterm/raw/main/badges/forks.svg)
 
 It allows you to bypass writing complex regex, `find`, `awk`, or `sed` commands by simply asking your terminal what you want it to do in plain English. `nanoterm` connects directly to your chosen provider (OpenAI, Anthropic, Google, Atlas Cloud) via the Vercel AI SDK.
 
