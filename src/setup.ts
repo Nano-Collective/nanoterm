@@ -109,7 +109,12 @@ const CLOUD_PROVIDERS: ProviderOption[] = [
 		id: "openrouter",
 		name: "OpenRouter",
 		defaultBaseUrl: "https://openrouter.ai/api/v1",
-		models: ["anthropic/claude-3.5-sonnet", "google/gemini-pro-1.5", "meta-llama/llama-3-70b-instruct", "Custom..."],
+		models: [
+			"anthropic/claude-3.5-sonnet",
+			"google/gemini-pro-1.5",
+			"meta-llama/llama-3-70b-instruct",
+			"Custom...",
+		],
 		sdkProvider: "openai-compatible",
 	},
 	{
@@ -123,7 +128,12 @@ const CLOUD_PROVIDERS: ProviderOption[] = [
 		id: "mistral",
 		name: "Mistral AI",
 		defaultBaseUrl: "https://api.mistral.ai/v1",
-		models: ["mistral-large-latest", "mistral-small-latest", "codestral-latest", "Custom..."],
+		models: [
+			"mistral-large-latest",
+			"mistral-small-latest",
+			"codestral-latest",
+			"Custom...",
+		],
 		sdkProvider: "mistral",
 	},
 	{

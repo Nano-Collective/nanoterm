@@ -60,16 +60,25 @@ export function resolveEnvVars(value: string | undefined): string | undefined {
 }
 
 export function loadConfig(): NanotermConfig {
-	const configPaths = [
-		path.join(process.cwd(), "agents.config.json"),
-		process.env.NANOTERM_CONFIG_PATH,
-		process.env.NANOCODER_CONFIG_DIR
-			? path.join(process.env.NANOCODER_CONFIG_DIR, "agents.config.json")
-			: undefined,
-		path.join(getPlatformConfigDir("nanoterm"), "agents.config.json"),
-		path.join(getPlatformConfigDir("nanocoder"), "agents.config.json"),
-		path.join(os.homedir(), ".agents.config.json"),
-	].filter(Boolean) as string[];
+	const configPaths: string[] = [];
+
+	if (process.env.NANOTERM_CONFIG_PATH) {
+		configPaths.push(process.env.NANOTERM_CONFIG_PATH);
+	}
+
+	configPaths.push(path.join(process.cwd(), "agents.config.json"));
+
+	if (process.env.NANOCODER_CONFIG_DIR) {
+		configPaths.push(
+			path.join(process.env.NANOCODER_CONFIG_DIR, "agents.config.json"),
+		);
+	} else {
+		configPaths.push(
+			path.join(getPlatformConfigDir("nanoterm"), "agents.config.json"),
+			path.join(getPlatformConfigDir("nanocoder"), "agents.config.json"),
+			path.join(os.homedir(), ".agents.config.json"),
+		);
+	}
 
 	for (const configPath of configPaths) {
 		if (fs.existsSync(configPath)) {

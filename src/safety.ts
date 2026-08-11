@@ -169,7 +169,8 @@ export function isDangerousCommand(command: string): CommandSeverity {
 		/\|\s*(?:sudo\s+)?(?:sh|bash|zsh|php|python\d*|ruby|perl)\b/.test(command)
 	)
 		return "destructive";
-	if (/>\s*["']?(?:\/etc\/|\/var\/|\/usr\/|\/dev\/)/.test(command)) return "destructive";
+	if (/>\s*["']?(?:\/etc\/|\/var\/|\/usr\/|\/dev\/)/.test(command))
+		return "destructive";
 
 	for (const segment of splitShellSegments(command)) {
 		if (severity === "destructive") break; // Early exit if already destructive
@@ -216,12 +217,14 @@ export function isDangerousCommand(command: string): CommandSeverity {
 		if (exe.startsWith("mkfs") || exe === "fdisk") markDestructive();
 		if (exe === "dd" && args.some((arg) => arg.startsWith("of=/dev/")))
 			markDestructive();
-		
+
 		if (exe === "find") {
 			if (args.includes("-delete")) {
 				markDestructive();
 			} else if (args.includes("-exec") || args.includes("-execdir")) {
-				const execIndex = args.findIndex((a) => a === "-exec" || a === "-execdir");
+				const execIndex = args.findIndex(
+					(a) => a === "-exec" || a === "-execdir",
+				);
 				const terminatorIndex = args.findIndex(
 					(a, i) => i > execIndex && (a === ";" || a === "+" || a === "\\;"),
 				);
@@ -247,7 +250,8 @@ export function isDangerousCommand(command: string): CommandSeverity {
 				markDestructive();
 		}
 		if (exe === "shred" || exe === "truncate") markDestructive();
-		if (["shutdown", "reboot", "halt", "poweroff"].includes(exe)) markDestructive();
+		if (["shutdown", "reboot", "halt", "poweroff"].includes(exe))
+			markDestructive();
 		if (
 			(exe === "docker" || exe === "podman") &&
 			targets.includes("system") &&

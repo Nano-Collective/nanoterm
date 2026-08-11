@@ -43,9 +43,18 @@ test("isDangerousCommand flags recursive removals", (t) => {
 test("isDangerousCommand cannot be bypassed with paths, wrappers, or long flags", (t) => {
 	t.is(isDangerousCommand("/bin/rm -rf /tmp/project"), "destructive");
 	t.is(isDangerousCommand("command rm -rf /tmp/project"), "destructive");
-	t.is(isDangerousCommand("env MODE=test rm --recursive /tmp/project"), "destructive");
-	t.is(isDangerousCommand("sudo -u root /bin/rm --recursive /tmp/project"), "destructive");
-	t.is(isDangerousCommand("sudo --user root /bin/rm --recursive /tmp/project"), "destructive");
+	t.is(
+		isDangerousCommand("env MODE=test rm --recursive /tmp/project"),
+		"destructive",
+	);
+	t.is(
+		isDangerousCommand("sudo -u root /bin/rm --recursive /tmp/project"),
+		"destructive",
+	);
+	t.is(
+		isDangerousCommand("sudo --user root /bin/rm --recursive /tmp/project"),
+		"destructive",
+	);
 	t.is(isDangerousCommand("chmod --recursive 777 /tmp/project"), "destructive");
 });
 
@@ -57,7 +66,10 @@ test("isDangerousCommand inspects newlines and treats dynamic shell code conserv
 	t.is(isDangerousCommand("find . -exec rm -rf {} ;"), "destructive");
 	t.is(isDangerousCommand("find . -exec cat {} ;"), "safe");
 	t.is(isDangerousCommand("node -e 'runSomeCode()'"), "destructive");
-	t.is(isDangerousCommand("busybox rm --recursive /tmp/project"), "destructive");
+	t.is(
+		isDangerousCommand("busybox rm --recursive /tmp/project"),
+		"destructive",
+	);
 });
 
 test("isDangerousCommand flags recursive chmod and chown", (t) => {

@@ -1,7 +1,4 @@
 import { Command } from "commander";
-import { generateCommand } from "./generate.js";
-import { promptApproval } from "./approval.js";
-import { executeCommand } from "./execute.js";
 import { loadConfig } from "./config.js";
 import { createRequire } from "node:module";
 
@@ -40,15 +37,18 @@ export async function runCLI(args: string[]) {
 			}
 
 			try {
+				const { generateCommand } = await import("./generate.js");
 				const command = await generateCommand(request, config);
 				if (command) {
 					console.log(`\nProposed command:\n> ${command}`);
 				}
 
+				const { promptApproval } = await import("./approval.js");
 				const approvedCommand = await promptApproval(command, config);
 
 				if (approvedCommand) {
 					try {
+						const { executeCommand } = await import("./execute.js");
 						const exitCode = await executeCommand(approvedCommand);
 						process.exitCode = exitCode;
 					} catch (execErr: unknown) {
