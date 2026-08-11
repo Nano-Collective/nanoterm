@@ -11,13 +11,20 @@ export async function promptApproval(
 	let currentCommand = command;
 
 	while (true) {
-		const isDangerous = currentCommand
+		const severity = currentCommand
 			? isDangerousCommand(currentCommand)
-			: false;
+			: "safe";
 
-		if (isDangerous) {
+		const isDestructive = severity === "destructive";
+		const isCaution = severity === "caution";
+
+		if (isDestructive) {
 			console.log(
 				`\n\x1b[31;1m[WARNING] This command appears to be destructive.\x1b[0m`,
+			);
+		} else if (isCaution) {
+			console.log(
+				`\n\x1b[33m[CAUTION] This command builds itself dynamically and can't be fully inspected.\x1b[0m`,
 			);
 		} else if (!currentCommand) {
 			console.log(`\n\x1b[33m[WARNING] The command is empty.\x1b[0m`);
@@ -28,7 +35,7 @@ export async function promptApproval(
 			output: process.stdout,
 		});
 
-		const promptText = isDangerous
+		const promptText = isDestructive
 			? `Execute? Type 'yes' to confirm [yes/N/edit/?]: `
 			: !currentCommand
 				? `Command is empty [edit/abort]: `
@@ -46,8 +53,8 @@ export async function promptApproval(
 
 		if (
 			currentCommand &&
-			((!isDangerous && (lowerAnswer === "y" || lowerAnswer === "yes")) ||
-				(isDangerous && lowerAnswer === "yes"))
+			((!isDestructive && (lowerAnswer === "y" || lowerAnswer === "yes")) ||
+				(isDestructive && lowerAnswer === "yes"))
 		) {
 			return currentCommand;
 		} else if (
@@ -58,7 +65,7 @@ export async function promptApproval(
 				`\n\x1b[33mCannot execute an empty command. Please edit or abort.\x1b[0m`,
 			);
 			// loop continues
-		} else if (isDangerous && lowerAnswer === "y") {
+		} else if (isDestructive && lowerAnswer === "y") {
 			console.log(
 				`\n\x1b[33mDestructive commands require typing the full word 'yes'.\x1b[0m`,
 			);

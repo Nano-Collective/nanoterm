@@ -148,18 +148,32 @@ function unwrapCommand(
 	};
 }
 
-export function isDangerousCommand(command: string): boolean {
-	if (command.includes(":(){ :|:& };:")) return true;
+export type CommandSeverity = "safe" | "caution" | "destructive";
+
+export function isDangerousCommand(command: string): CommandSeverity {
+	let severity = "safe" as CommandSeverity;
+
+	const markCaution = () => {
+		if (severity === "safe") severity = "caution";
+	};
+
+	const markDestructive = () => {
+		severity = "destructive";
+	};
+
+	if (command.includes(":(){ :|:& };:")) return "destructive";
 
 	// Dynamic command construction cannot be inspected reliably before shell execution.
-	if (/(^|[^\\])`|\$\(/.test(command)) return true;
+	if (/(^|[^\\])`|\$\(/.test(command)) markCaution();
 	if (
 		/\|\s*(?:sudo\s+)?(?:sh|bash|zsh|php|python\d*|ruby|perl)\b/.test(command)
 	)
-		return true;
-	if (/>\s*["']?(?:\/etc\/|\/var\/|\/usr\/|\/dev\/)/.test(command)) return true;
+		return "destructive";
+	if (/>\s*["']?(?:\/etc\/|\/var\/|\/usr\/|\/dev\/)/.test(command)) return "destructive";
 
 	for (const segment of splitShellSegments(command)) {
+		if (severity === "destructive") break; // Early exit if already destructive
+
 		const parsed = unwrapCommand(tokenize(segment));
 		if (!parsed) continue;
 		const { exe, args } = parsed;
@@ -177,7 +191,7 @@ export function isDangerousCommand(command: string): boolean {
 			}
 		}
 
-		if (exe === "eval" || exe === "source" || exe === ".") return true;
+		if (exe === "eval" || exe === "source" || exe === ".") markDestructive();
 		if (
 			SHELL_INTERPRETERS.has(exe) &&
 			(flags.has("c") ||
@@ -187,35 +201,53 @@ export function isDangerousCommand(command: string): boolean {
 				longFlags.has("eval") ||
 				longFlags.has("print"))
 		)
-			return true;
+			markDestructive();
 
 		if (exe === "rm") {
 			if (flags.has("r") || flags.has("R") || longFlags.has("recursive"))
-				return true;
-			if (targets.some((target) => target.includes("*"))) return true;
+				markDestructive();
+			if (targets.some((target) => target.includes("*"))) markDestructive();
 		}
 		if (
 			(exe === "chmod" || exe === "chown") &&
 			(flags.has("R") || longFlags.has("recursive"))
 		)
-			return true;
-		if (exe.startsWith("mkfs") || exe === "fdisk") return true;
+			markDestructive();
+		if (exe.startsWith("mkfs") || exe === "fdisk") markDestructive();
 		if (exe === "dd" && args.some((arg) => arg.startsWith("of=/dev/")))
-			return true;
-		if (
-			exe === "find" &&
-			(args.includes("-delete") ||
-				args.includes("-exec") ||
-				args.includes("-execdir"))
-		)
-			return true;
-		if (exe === "git") {
-			if (targets.includes("reset") && longFlags.has("hard")) return true;
-			if (targets.includes("clean") && flags.has("f") && flags.has("d"))
-				return true;
+			markDestructive();
+		
+		if (exe === "find") {
+			if (args.includes("-delete")) {
+				markDestructive();
+			} else if (args.includes("-exec") || args.includes("-execdir")) {
+				const execIndex = args.findIndex((a) => a === "-exec" || a === "-execdir");
+				const terminatorIndex = args.findIndex(
+					(a, i) => i > execIndex && (a === ";" || a === "+" || a === "\\;"),
+				);
+
+				const execArgs = args.slice(
+					execIndex + 1,
+					terminatorIndex !== -1 ? terminatorIndex : undefined,
+				);
+				if (execArgs.length > 0) {
+					const execCommand = execArgs.join(" ");
+					const execSeverity = isDangerousCommand(execCommand);
+					if (execSeverity === "destructive") markDestructive();
+					else if (execSeverity === "caution") markCaution();
+				} else {
+					markCaution();
+				}
+			}
 		}
-		if (exe === "shred" || exe === "truncate") return true;
-		if (["shutdown", "reboot", "halt", "poweroff"].includes(exe)) return true;
+
+		if (exe === "git") {
+			if (targets.includes("reset") && longFlags.has("hard")) markDestructive();
+			if (targets.includes("clean") && flags.has("f") && flags.has("d"))
+				markDestructive();
+		}
+		if (exe === "shred" || exe === "truncate") markDestructive();
+		if (["shutdown", "reboot", "halt", "poweroff"].includes(exe)) markDestructive();
 		if (
 			(exe === "docker" || exe === "podman") &&
 			targets.includes("system") &&
@@ -223,15 +255,15 @@ export function isDangerousCommand(command: string): boolean {
 			(flags.has("a") || longFlags.has("all")) &&
 			(flags.has("f") || longFlags.has("force"))
 		)
-			return true;
+			markDestructive();
 		if (
 			exe === "kubectl" &&
 			targets.includes("delete") &&
 			(targets.includes("ns") || targets.includes("namespace"))
 		)
-			return true;
-		if (exe === "mv" && targets.includes("/dev/null")) return true;
+			markDestructive();
+		if (exe === "mv" && targets.includes("/dev/null")) markDestructive();
 	}
 
-	return false;
+	return severity;
 }
