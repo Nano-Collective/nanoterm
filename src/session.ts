@@ -15,7 +15,11 @@ const MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes
 function getSessionFilePath(): string {
 	// Use the parent shell process ID to scope the session to the current terminal tab
 	const ppid = process.ppid;
-	return path.join(os.tmpdir(), `nanoterm-session-${ppid}.json`);
+	const sessionDir = path.join(os.homedir(), ".nanoterm", "sessions");
+	if (!fs.existsSync(sessionDir)) {
+		fs.mkdirSync(sessionDir, { recursive: true, mode: 0o700 });
+	}
+	return path.join(sessionDir, `nanoterm-session-${ppid}.json`);
 }
 
 export function appendOutputTail(current: string, chunk: string): string {
@@ -27,14 +31,16 @@ export function appendOutputTail(current: string, chunk: string): string {
 
 function cleanupStaleSessions(): void {
 	try {
-		const tmpDir = os.tmpdir();
+		const sessionDir = path.join(os.homedir(), ".nanoterm", "sessions");
+		if (!fs.existsSync(sessionDir)) return;
+
 		// Fire-and-forget async cleanup so we don't block the CLI
-		fs.readdir(tmpDir, (err, files) => {
+		fs.readdir(sessionDir, (err, files) => {
 			if (err) return;
 			const now = Date.now();
 			for (const file of files) {
 				if (file.startsWith("nanoterm-session-") && file.endsWith(".json")) {
-					const filePath = path.join(tmpDir, file);
+					const filePath = path.join(sessionDir, file);
 					fs.stat(filePath, (err, stats) => {
 						if (!err && now - stats.mtimeMs > MAX_AGE_MS) {
 							fs.unlink(filePath, () => {});

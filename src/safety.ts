@@ -166,7 +166,9 @@ export function isDangerousCommand(command: string): CommandSeverity {
 	// Dynamic command construction cannot be inspected reliably before shell execution.
 	if (/(^|[^\\])`|\$\(/.test(command)) markCaution();
 	if (
-		/\|\s*(?:sudo\s+)?(?:sh|bash|zsh|php|python\d*|ruby|perl)\b/.test(command)
+		/\|\s*(?:(?:sudo|env|nohup|busybox|command|builtin)\s+)*(?:sh|bash|zsh|php|python\d*|ruby|perl)\b/.test(
+			command,
+		)
 	)
 		return "destructive";
 	if (/>\s*["']?(?:\/etc\/|\/var\/|\/usr\/|\/dev\/)/.test(command))

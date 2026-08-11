@@ -62,8 +62,6 @@ export function resolveEnvVars(value: string | undefined): string | undefined {
 export function loadConfig(): NanotermConfig {
 	const configPaths: string[] = [];
 
-	configPaths.push(path.join(process.cwd(), "agents.config.json"));
-
 	if (process.env.NANOTERM_CONFIG_PATH) {
 		configPaths.push(process.env.NANOTERM_CONFIG_PATH);
 	}

@@ -23,7 +23,9 @@ test("save and load session context successfully", (t) => {
 	t.is(loaded?.stderr, stderr);
 
 	const sessionFilePath = path.join(
-		os.tmpdir(),
+		os.homedir(),
+		".nanoterm",
+		"sessions",
 		`nanoterm-session-${process.ppid}.json`,
 	);
 
@@ -41,7 +43,9 @@ test("save and load session context successfully", (t) => {
 test("loadSessionContext ignores and unlinks stale sessions", (t) => {
 	const command = 'echo "stale"';
 	const sessionFilePath = path.join(
-		os.tmpdir(),
+		os.homedir(),
+		".nanoterm",
+		"sessions",
 		`nanoterm-session-${process.ppid}.json`,
 	);
 
@@ -76,7 +80,9 @@ test("appendOutputTail bounds captured output while retaining the newest data", 
 
 test("saveSessionContext enforces owner-only permissions for existing files", (t) => {
 	const sessionFilePath = path.join(
-		os.tmpdir(),
+		os.homedir(),
+		".nanoterm",
+		"sessions",
 		`nanoterm-session-${process.ppid}.json`,
 	);
 
