@@ -6,10 +6,7 @@ Built by the [Nano Collective](https://nanocollective.org) — a community colle
 
 ![Build Status](https://github.com/Nano-Collective/nanoterm/raw/main/badges/build.svg)
 ![Coverage](https://github.com/Nano-Collective/nanoterm/raw/main/badges/coverage.svg)
-![Version](https://github.com/Nano-Collective/nanoterm/raw/main/badges/npm-version.svg)
-![NPM Downloads](https://github.com/Nano-Collective/nanoterm/raw/main/badges/npm-downloads-monthly.svg)
 ![Stars](https://github.com/Nano-Collective/nanoterm/raw/main/badges/stars.svg)
-![License](https://github.com/Nano-Collective/nanoterm/raw/main/badges/npm-license.svg)
 ![Repo Size](https://github.com/Nano-Collective/nanoterm/raw/main/badges/repo-size.svg)
 ![Forks](https://github.com/Nano-Collective/nanoterm/raw/main/badges/forks.svg)
 
