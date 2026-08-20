@@ -3,6 +3,7 @@ import {
 	resolveEnvVars,
 	getPlatformConfigDir,
 	writeConfigFile,
+	loadConfig,
 } from "../src/config.js";
 import fs from "node:fs";
 import os from "node:os";
@@ -91,3 +92,69 @@ test("writeConfigFile enforces owner-only permissions for new and existing files
 	});
 	fs.rmSync(directory, { recursive: true });
 });
+
+test.serial(
+	"loadConfig › project-level agents.config.json takes precedence over platform config",
+	(t) => {
+		const projectDir = fs.mkdtempSync(
+			path.join(os.tmpdir(), "nanoterm-project-"),
+		);
+		const platformDir = fs.mkdtempSync(
+			path.join(os.tmpdir(), "nanoterm-platform-"),
+		);
+
+		const projectConfig = {
+			provider: "ProjectProvider",
+			model: "project-model-1",
+			providers: [
+				{
+					name: "ProjectProvider",
+					baseUrl: "http://localhost:9999/v1",
+					models: ["project-model-1"],
+				},
+			],
+		};
+
+		const platformConfig = {
+			provider: "PlatformProvider",
+			model: "platform-model-1",
+			providers: [
+				{
+					name: "PlatformProvider",
+					baseUrl: "http://localhost:8888/v1",
+					models: ["platform-model-1"],
+				},
+			],
+		};
+
+		fs.writeFileSync(
+			path.join(projectDir, "agents.config.json"),
+			JSON.stringify(projectConfig),
+		);
+		fs.writeFileSync(
+			path.join(platformDir, "agents.config.json"),
+			JSON.stringify(platformConfig),
+		);
+
+		// Save originals
+		const originalCwd = process.cwd();
+		const originalEnv = { ...process.env };
+
+		// Point cwd to project dir, NANOCODER_CONFIG_DIR to platform dir
+		process.chdir(projectDir);
+		process.env.NANOCODER_CONFIG_DIR = platformDir;
+		delete process.env.NANOTERM_CONFIG_PATH;
+
+		try {
+			const config = loadConfig();
+			t.is(config.provider, "ProjectProvider");
+			t.is(config.model, "project-model-1");
+		} finally {
+			process.chdir(originalCwd);
+			process.env.NANOCODER_CONFIG_DIR = originalEnv.NANOCODER_CONFIG_DIR;
+			process.env.NANOTERM_CONFIG_PATH = originalEnv.NANOTERM_CONFIG_PATH;
+			fs.rmSync(projectDir, { recursive: true });
+			fs.rmSync(platformDir, { recursive: true });
+		}
+	},
+);
