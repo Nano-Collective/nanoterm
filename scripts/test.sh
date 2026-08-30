@@ -16,4 +16,10 @@ pnpm run test:ava
 echo "Running Knip Check..."
 pnpm run test:knip
 
+echo "Running Dependency Audit..."
+pnpm run test:audit
+
+echo "Running Semgrep Security Scan..."
+pnpm run test:security
+
 echo "All checks passed successfully!"

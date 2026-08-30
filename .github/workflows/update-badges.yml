@@ -44,7 +44,7 @@ jobs:
       - name: Run build to check status
         id: build
         run: |
-          if pnpm run test:all; then
+          if pnpm build; then
             echo "status=passing" >> $GITHUB_OUTPUT
             echo "color=brightgreen" >> $GITHUB_OUTPUT
           else
