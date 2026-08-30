@@ -28,7 +28,9 @@
 		"test:lint:fix": "biome lint --write --unsafe .",
 		"test:ava": "ava",
 		"test:ava:coverage": "c8 --reporter=text --reporter=json-summary ava",
-		"test:knip": "knip"
+		"test:knip": "knip",
+		"test:audit": "pnpm audit --audit-level=high --ignore-unfixable",
+		"test:security": "semgrep scan --config auto --error"
 	},
 	"repository": {
 		"type": "git",
