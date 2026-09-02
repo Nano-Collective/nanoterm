@@ -9,33 +9,38 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+const DOLLAR = "$";
+
 test("resolveEnvVars › resolves existing env vars with $VAR syntax", (t) => {
 	process.env.TEST_VAR_1 = "test_value_1";
-	t.is(resolveEnvVars("$TEST_VAR_1"), "test_value_1");
+	t.is(resolveEnvVars(`${DOLLAR}TEST_VAR_1`), "test_value_1");
 	t.is(
-		resolveEnvVars("Prefix $TEST_VAR_1 Suffix"),
+		resolveEnvVars(`Prefix ${DOLLAR}TEST_VAR_1 Suffix`),
 		"Prefix test_value_1 Suffix",
 	);
 });
 
-test("resolveEnvVars › resolves existing env vars with ${VAR} syntax", (t) => {
+test("resolveEnvVars › resolves existing env vars with dollar-brace syntax", (t) => {
 	process.env.TEST_VAR_2 = "test_value_2";
-	t.is(resolveEnvVars("${TEST_VAR_2}"), "test_value_2");
+	t.is(resolveEnvVars(`${DOLLAR}{TEST_VAR_2}`), "test_value_2");
 	t.is(
-		resolveEnvVars("Prefix ${TEST_VAR_2} Suffix"),
+		resolveEnvVars(`Prefix ${DOLLAR}{TEST_VAR_2} Suffix`),
 		"Prefix test_value_2 Suffix",
 	);
 });
 
-test("resolveEnvVars › resolves env vars with default fallback ${VAR:-default}", (t) => {
+test("resolveEnvVars › resolves env vars with default fallback syntax", (t) => {
 	delete process.env.TEST_VAR_MISSING;
-	t.is(resolveEnvVars("${TEST_VAR_MISSING:-default_value}"), "default_value");
+	t.is(
+		resolveEnvVars(`${DOLLAR}{TEST_VAR_MISSING:-default_value}`),
+		"default_value",
+	);
 });
 
 test("resolveEnvVars › resolves missing env vars to empty string if no default", (t) => {
 	delete process.env.TEST_VAR_MISSING;
-	t.is(resolveEnvVars("$TEST_VAR_MISSING"), "");
-	t.is(resolveEnvVars("${TEST_VAR_MISSING}"), "");
+	t.is(resolveEnvVars(`${DOLLAR}TEST_VAR_MISSING`), "");
+	t.is(resolveEnvVars(`${DOLLAR}{TEST_VAR_MISSING}`), "");
 });
 
 test("resolveEnvVars › returns undefined when input is undefined", (t) => {
@@ -45,7 +50,10 @@ test("resolveEnvVars › returns undefined when input is undefined", (t) => {
 test("resolveEnvVars › handles multiple vars in same string", (t) => {
 	process.env.VAR_A = "A";
 	process.env.VAR_B = "B";
-	t.is(resolveEnvVars("Values: $VAR_A and ${VAR_B}"), "Values: A and B");
+	t.is(
+		resolveEnvVars(`Values: ${DOLLAR}VAR_A and ${DOLLAR}{VAR_B}`),
+		"Values: A and B",
+	);
 });
 
 test.serial(
