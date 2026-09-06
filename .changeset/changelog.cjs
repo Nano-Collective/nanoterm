@@ -8,8 +8,8 @@
  */
 
 async function getReleaseLine(changeset) {
-	const summary = (changeset.summary || '').trim();
-	if (!summary) return '';
+	const summary = (changeset.summary || "").trim();
+	if (!summary) return "";
 
 	// Pass the author's markdown through faithfully. If they already wrote one
 	// or more list items (the usual case for a consolidated entry), emit it as
@@ -20,11 +20,11 @@ async function getReleaseLine(changeset) {
 
 async function getDependencyReleaseLine() {
 	// Internal dependency bumps are not user-facing.
-	return '';
+	return "";
 }
 
 module.exports = {
 	getReleaseLine,
 	getDependencyReleaseLine,
-	default: {getReleaseLine, getDependencyReleaseLine},
+	default: { getReleaseLine, getDependencyReleaseLine },
 };
