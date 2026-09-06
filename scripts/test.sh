@@ -20,6 +20,10 @@ echo "Running Dependency Audit..."
 pnpm run test:audit
 
 echo "Running Semgrep Security Scan..."
-pnpm run test:security
+if command -v semgrep >/dev/null 2>&1; then
+  pnpm run test:security
+else
+  echo "Skipping Semgrep (not installed) — CI will run it."
+fi
 
 echo "All checks passed successfully!"
