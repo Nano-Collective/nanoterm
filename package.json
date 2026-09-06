@@ -30,7 +30,9 @@
 		"test:ava:coverage": "c8 --reporter=text --reporter=json-summary ava",
 		"test:knip": "knip",
 		"test:audit": "pnpm audit --audit-level=high --ignore-unfixable",
-		"test:security": "semgrep scan --config auto --error"
+		"test:security": "semgrep scan --config auto --error",
+		"changeset": "changeset",
+		"changeset:version": "changeset version"
 	},
 	"repository": {
 		"type": "git",
@@ -65,6 +67,7 @@
 	"devDependencies": {
 		"@ava/typescript": "^7.0.0",
 		"@biomejs/biome": "^2.5.5",
+		"@changesets/cli": "^3.0.1",
 		"@types/node": "^26.1.2",
 		"ava": "^8.0.1",
 		"c8": "^12.0.0",
