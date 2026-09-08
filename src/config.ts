@@ -59,7 +59,15 @@ export function resolveEnvVars(value: string | undefined): string | undefined {
 	);
 }
 
-export function loadConfig(): NanotermConfig {
+/**
+ * Every place a configuration may live, in the order they win.
+ *
+ * The single source of truth for config location. It exists because there used
+ * to be two: `loadConfig` resolved one way and the setup wizard another, so a
+ * user with `NANOCODER_CONFIG_DIR` set had the wizard write somewhere the app
+ * never read — and was told "Success!" for it.
+ */
+function configSearchPaths(): string[] {
 	const configPaths: string[] = [
 		path.join(process.cwd(), "agents.config.json"),
 	];
@@ -79,6 +87,43 @@ export function loadConfig(): NanotermConfig {
 			path.join(os.homedir(), ".agents.config.json"),
 		);
 	}
+
+	return configPaths;
+}
+
+/**
+ * The file the setup wizard writes to.
+ *
+ * Follows the same precedence as {@link configSearchPaths} so that what the
+ * wizard saves is what the app loads — with one deliberate exception: the
+ * current working directory is never written to. `loadConfig` reads it first as
+ * a project-local override, but a wizard that dropped an API key into whatever
+ * directory you happened to be standing in would be a good way to commit one.
+ */
+export function getWritableConfigPath(): string {
+	if (process.env.NANOTERM_CONFIG_PATH) {
+		return process.env.NANOTERM_CONFIG_PATH;
+	}
+	if (process.env.NANOCODER_CONFIG_DIR) {
+		return path.join(process.env.NANOCODER_CONFIG_DIR, "agents.config.json");
+	}
+	return path.join(getPlatformConfigDir("nanoterm"), "agents.config.json");
+}
+
+/**
+ * The configuration the app will actually load, or null if there is none.
+ *
+ * Used by the wizard to tell whether something higher in the search order will
+ * shadow what it is about to write — a project-local `agents.config.json` in
+ * the working directory still wins, and silently overriding a fresh setup is
+ * the failure this whole module is arranged to prevent.
+ */
+export function findActiveConfigPath(): string | null {
+	return configSearchPaths().find((p) => fs.existsSync(p)) ?? null;
+}
+
+export function loadConfig(): NanotermConfig {
+	const configPaths = configSearchPaths();
 
 	for (const configPath of configPaths) {
 		if (fs.existsSync(configPath)) {

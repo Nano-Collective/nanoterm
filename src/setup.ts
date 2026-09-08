@@ -6,8 +6,9 @@ import { getProviderModel } from "./provider.js";
 import {
 	type NanotermConfig,
 	type ProviderConfig,
-	getPlatformConfigDir,
 	writeConfigFile,
+	findActiveConfigPath,
+	getWritableConfigPath,
 } from "./config.js";
 
 interface ProviderOption {
@@ -219,22 +220,47 @@ type WizardState =
 	| "configure_provider"
 	| "exit";
 
+/**
+ * Warn when something earlier in the search order will shadow what we just
+ * wrote. `loadConfig` reads a project-local `agents.config.json` in the working
+ * directory first, so a user can complete this wizard and still have the app
+ * load a different file. Silence there is the same failure this wizard was just
+ * fixed for: a successful-looking setup that changes nothing.
+ */
+function warnIfShadowed(writtenPath: string): void {
+	const active = findActiveConfigPath();
+	if (active && path.resolve(active) !== path.resolve(writtenPath)) {
+		console.log(
+			`\x1b[33mNote: ${active} takes precedence and is what nanoterm will load.\nThe settings you just saved to ${writtenPath} will not take effect until that file is removed or updated.\x1b[0m\n`,
+		);
+	}
+}
+
 export async function runConfigWizard() {
 	console.log("\n\x1b[36;1m--- Nanoterm Advanced Setup Wizard ---\x1b[0m\n");
 
-	const configDir = getPlatformConfigDir("nanoterm");
+	// The same resolution `loadConfig` uses. Resolving the platform directory
+	// directly here meant that a user with NANOCODER_CONFIG_DIR set — the normal
+	// setup for anyone already running Nanocoder — had this wizard write
+	// somewhere the app never reads, and be told "Success!" for it.
+	const configPath = getWritableConfigPath();
+	const configDir = path.dirname(configPath);
 	if (!fs.existsSync(configDir)) {
 		fs.mkdirSync(configDir, { recursive: true, mode: 0o700 });
 	}
 
-	const configPath = path.join(configDir, "agents.config.json");
-
+	// Read whatever is actually in effect, not just what sits at the write
+	// target: the wizard offers to reuse existing providers, and offering none
+	// to someone who has a working config would be its own kind of wrong.
+	const activeConfigPath = findActiveConfigPath();
 	let existingConfig: Partial<NanotermConfig> = {};
-	if (fs.existsSync(configPath)) {
+	if (activeConfigPath) {
 		try {
-			existingConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+			existingConfig = JSON.parse(fs.readFileSync(activeConfigPath, "utf-8"));
 		} catch (_e) {
-			// Ignore read error
+			// A config that will not parse is treated as absent — the wizard's job
+			// is to replace it, and refusing to start would leave the user with no
+			// way to fix it but a text editor.
 		}
 	}
 
@@ -373,6 +399,7 @@ export async function runConfigWizard() {
 			existingConfig.model = chosenModel;
 
 			writeConfigFile(configPath, existingConfig);
+			warnIfShadowed(configPath);
 			console.log(
 				`\n\x1b[32mSuccess! Active provider set to ${chosenName} (${chosenModel})\x1b[0m\n`,
 			);
@@ -593,6 +620,7 @@ export async function runConfigWizard() {
 			console.log(
 				`\n\x1b[32mSuccess! Configuration saved to ${configPath}\x1b[0m\n`,
 			);
+			warnIfShadowed(configPath);
 			state = "exit";
 		}
 	}
