@@ -566,6 +566,12 @@ test.serial(
 				fs.existsSync(path.join(envDir, "agents.config.json")),
 				"written to NANOCODER_CONFIG_DIR, where loadConfig will look",
 			);
+			// The negation is the load-bearing half of this regression test, and it
+			// only means anything because HOME is redirected to the fixture — so
+			// `configPathUnderHome(dir)` is the platform path the *wizard* would
+			// resolve, not one on the developer's machine. `configDirUnderHome`
+			// throws if that ever stops holding, rather than letting the assertion
+			// pass against a path nothing could have written to.
 			t.false(
 				fs.existsSync(configPathUnderHome(dir)),
 				"and not to the platform directory, which loadConfig ignores when the env var is set",
@@ -626,6 +632,58 @@ test.serial(
 			);
 		} finally {
 			console.log = originalLog;
+			if (originalDir !== undefined) {
+				process.env.NANOCODER_CONFIG_DIR = originalDir;
+			}
+			if (originalHome === undefined) {
+				delete process.env.HOME;
+			} else {
+				process.env.HOME = originalHome;
+			}
+			process.chdir(originalCwd);
+			fs.rmSync(dir, { recursive: true, force: true });
+		}
+	},
+);
+
+test.serial(
+	"runConfigWizard › honours NANOTERM_CONFIG_PATH as a full file path",
+	async (t) => {
+		// The third branch of getWritableConfigPath, and the one that is easiest
+		// to get wrong: it is a file, not a directory, so joining
+		// "agents.config.json" onto it would write to a path nothing reads.
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nanoterm-wz-filepath-"));
+		const explicit = path.join(dir, "somewhere", "my-config.json");
+		const originalCwd = process.cwd();
+		const originalPath = process.env.NANOTERM_CONFIG_PATH;
+		const originalDir = process.env.NANOCODER_CONFIG_DIR;
+		const originalHome = process.env.HOME;
+		delete process.env.NANOCODER_CONFIG_DIR;
+		process.env.NANOTERM_CONFIG_PATH = explicit;
+		process.env.HOME = dir;
+		process.chdir(dir);
+
+		try {
+			await runWizard({
+				"select:Select provider type:": "local",
+				"select:Select a provider to configure:": "ollama",
+				"input:Enter Base URL (default: http://localhost:11434/v1): ":
+					"http://localhost:11434/v1",
+				"select:Select a model:": "llama4",
+			});
+
+			t.true(fs.existsSync(explicit), "written to the exact path given");
+			t.false(
+				fs.existsSync(path.join(explicit, "agents.config.json")),
+				"and not treated as a directory to join a filename onto",
+			);
+			t.is(JSON.parse(fs.readFileSync(explicit, "utf-8")).model, "llama4");
+		} finally {
+			if (originalPath === undefined) {
+				delete process.env.NANOTERM_CONFIG_PATH;
+			} else {
+				process.env.NANOTERM_CONFIG_PATH = originalPath;
+			}
 			if (originalDir !== undefined) {
 				process.env.NANOCODER_CONFIG_DIR = originalDir;
 			}

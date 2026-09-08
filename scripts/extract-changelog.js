@@ -37,18 +37,19 @@ try {
 // 1. ## [version] - date (Keep a Changelog format)
 // 2. ## version (simple heading)
 // 3. # version (simple heading with single #)
+// The version reaches here from argv or package.json and is interpolated into
+// a pattern, so it has to be escaped in full. Escaping only `.` — as this did —
+// leaves every other metacharacter live, backslash included: a version string
+// of `1.0.0\` produces a malformed pattern and one containing `(` or `*`
+// changes what the pattern matches.
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const escapedVersion = escapeRegExp(version);
+
 const versionPatterns = [
 	// Pattern 1: ## [version] or ## version
-	new RegExp(
-		`##+ \\[?${version.replace(
-			/\./g,
-			"\\.",
-		)}\\]?.*?\\n([\\s\\S]*?)(?=\\n##+ |$)`,
-	),
+	new RegExp(`##+ \\[?${escapedVersion}\\]?.*?\\n([\\s\\S]*?)(?=\\n##+ |$)`),
 	// Pattern 2: # version
-	new RegExp(
-		`#+ ${version.replace(/\./g, "\\.")}.*?\\n([\\s\\S]*?)(?=\\n#+ |$)`,
-	),
+	new RegExp(`#+ ${escapedVersion}.*?\\n([\\s\\S]*?)(?=\\n#+ |$)`),
 ];
 
 let match = null;
