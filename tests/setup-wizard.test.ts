@@ -441,16 +441,20 @@ test.serial(
 	"runConfigWizard › invalid JSON in existing config is ignored gracefully",
 	async (t) => {
 		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nanoterm-wz-bad-"));
-		const configDir = path.join(dir, ".config", "nanoterm");
-		fs.mkdirSync(configDir, { recursive: true, mode: 0o700 });
-		const configPath = path.join(configDir, "agents.config.json");
-		fs.writeFileSync(configPath, "not valid json");
 		const originalCwd = process.cwd();
 		const originalDir = process.env.NANOCODER_CONFIG_DIR;
 		const originalHome = process.env.HOME;
-		process.env.NANOCODER_CONFIG_DIR = configDir;
 		process.env.HOME = dir;
 		process.chdir(dir);
+		// Seeded where the wizard actually reads: it resolves the platform config
+		// directory directly and does not consult NANOCODER_CONFIG_DIR. Seeding at
+		// `dir/.config/nanoterm` meant the wizard never saw the bad file, so this
+		// test passed without once exercising the invalid-JSON path it is named
+		// for. See Nano-Collective/nanoterm#33 for the read/write mismatch itself.
+		const configDir = configDirUnderHome(dir);
+		fs.mkdirSync(configDir, { recursive: true, mode: 0o700 });
+		const configPath = path.join(configDir, "agents.config.json");
+		fs.writeFileSync(configPath, "not valid json");
 
 		try {
 			await runWizard({
@@ -460,7 +464,23 @@ test.serial(
 					"http://localhost:11434/v1",
 				"select:Select a model:": "llama4",
 			});
-			t.pass("wizard handled invalid JSON config");
+			// Stronger than `t.pass()`, which only proved the wizard did not throw.
+			// Asserting the file was rewritten also proves the fixture is actually
+			// in play: if the wizard were reading somewhere else, the unparseable
+			// content would still be sitting here.
+			//
+			// Platform-independent by construction, unlike the other tests in this
+			// file: `loadConfig` consults NANOCODER_CONFIG_DIR *instead of* the
+			// platform directories, not as well as them, so setting it pins the
+			// path on every OS.
+			// Stronger than the `t.pass()` this replaced, which proved only that the
+			// wizard did not throw. Asserting the rewrite also proves the fixture
+			// was in play: if the wizard read somewhere else, the unparseable
+			// content would still be sitting here — which is exactly how this test
+			// went years without testing anything.
+			const rewritten = fs.readFileSync(configPath, "utf-8");
+			t.not(rewritten, "not valid json", "the bad config was replaced");
+			t.notThrows(() => JSON.parse(rewritten), "and replaced with valid JSON");
 		} finally {
 			if (originalDir === undefined) {
 				delete process.env.NANOCODER_CONFIG_DIR;
