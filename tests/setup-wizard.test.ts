@@ -179,15 +179,6 @@ test.serial(
 		process.env.NANOCODER_CONFIG_DIR = configDir;
 		process.env.HOME = dir;
 		process.chdir(dir);
-		// After HOME is redirected, not before: the config directory is resolved
-		// from it, so pre-creating the fixture any earlier would seed the
-		// developer's real config directory instead of the temp one.
-		const homeConfigDir = configDirUnderHome(dir);
-		fs.mkdirSync(homeConfigDir, { recursive: true, mode: 0o700 });
-		fs.writeFileSync(
-			path.join(homeConfigDir, "agents.config.json"),
-			fs.readFileSync(path.join(configDir, "agents.config.json"), "utf-8"),
-		);
 
 		try {
 			await runWizard({
@@ -196,10 +187,11 @@ test.serial(
 				"select:Select default model:": "qwen3",
 			});
 
-			// The wizard writes to the platform config dir
-			// (which equals configPathUnderHome(dir) because HOME=dir).
+			// NANOCODER_CONFIG_DIR is set, so this is both where the wizard reads
+			// its existing providers and where it saves — the two agreeing is the
+			// point of #33.
 			const written = JSON.parse(
-				fs.readFileSync(configPathUnderHome(dir), "utf-8"),
+				fs.readFileSync(path.join(configDir, "agents.config.json"), "utf-8"),
 			);
 			t.is(written.provider, "Ollama");
 			t.is(written.model, "qwen3");
@@ -246,15 +238,6 @@ test.serial(
 		process.env.NANOCODER_CONFIG_DIR = configDir;
 		process.env.HOME = dir;
 		process.chdir(dir);
-		// After HOME is redirected, not before: the config directory is resolved
-		// from it, so pre-creating the fixture any earlier would seed the
-		// developer's real config directory instead of the temp one.
-		const homeConfigDir = configDirUnderHome(dir);
-		fs.mkdirSync(homeConfigDir, { recursive: true, mode: 0o700 });
-		fs.writeFileSync(
-			path.join(homeConfigDir, "agents.config.json"),
-			fs.readFileSync(path.join(configDir, "agents.config.json"), "utf-8"),
-		);
 
 		try {
 			await runWizard({
@@ -264,7 +247,7 @@ test.serial(
 			});
 
 			const written = JSON.parse(
-				fs.readFileSync(configPathUnderHome(dir), "utf-8"),
+				fs.readFileSync(path.join(configDir, "agents.config.json"), "utf-8"),
 			);
 			t.is(written.model, "manual-model");
 		} finally {
@@ -311,15 +294,6 @@ test.serial(
 		process.env.NANOCODER_CONFIG_DIR = configDir;
 		process.env.HOME = dir;
 		process.chdir(dir);
-		// After HOME is redirected, not before: the config directory is resolved
-		// from it, so pre-creating the fixture any earlier would seed the
-		// developer's real config directory instead of the temp one.
-		const homeConfigDir = configDirUnderHome(dir);
-		fs.mkdirSync(homeConfigDir, { recursive: true, mode: 0o700 });
-		fs.writeFileSync(
-			path.join(homeConfigDir, "agents.config.json"),
-			fs.readFileSync(path.join(configDir, "agents.config.json"), "utf-8"),
-		);
 
 		try {
 			await runWizard({
@@ -330,7 +304,7 @@ test.serial(
 			});
 
 			const written = JSON.parse(
-				fs.readFileSync(configPathUnderHome(dir), "utf-8"),
+				fs.readFileSync(path.join(configDir, "agents.config.json"), "utf-8"),
 			);
 			t.is(written.model, "my-custom-model");
 		} finally {
@@ -526,13 +500,24 @@ test.serial(
 		process.chdir(dir);
 
 		try {
-			// First pass: Set Active Provider, then back at the provider
-			// picker to return to action_select. Second pass: Update / Add
-			// provider, then back through the type selector to exit.
+			// Backing out of either branch returns to the action menu, so the menu
+			// is answered three times: into "active", into "update", then out.
+			//
+			// It used to be answered twice, and passed — because with no providers
+			// in the config the wizard never showed the action menu at all, so
+			// neither back-navigation path this test is named for was ever
+			// reached. It only became a real test once the wizard started reading
+			// the config the test seeds (#33).
+			//
+			// The third answer is an ExitPromptError rather than a value: the
+			// action menu has no exit choice, so anything that is not "active"
+			// falls through to the provider-type branch and the loop never ends.
+			// Ctrl+C is the only way out of it, which is what this simulates.
 			const answers: Record<string, unknown> = {
 				"select:What would you like to do?": ["active", "update"],
 				"select:Select active provider:": "__back",
 				"select:Select provider type:": "__back",
+				__throw_exit_on__: "select:What would you like to do?",
 			};
 			await runWizard(answers);
 			t.pass("wizard handled back navigation");
@@ -549,3 +534,108 @@ test.serial(
 );
 
 void 0;
+
+test.serial(
+	"runConfigWizard › writes where the app reads when NANOCODER_CONFIG_DIR is set",
+	async (t) => {
+		// The regression this locks in (#33). The wizard used to resolve the
+		// platform config directory directly while `loadConfig` honoured
+		// NANOCODER_CONFIG_DIR *instead of* it, so anyone already running
+		// Nanocoder configured nanoterm, saw "Success!", and had the app read
+		// none of it.
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nanoterm-wz-envdir-"));
+		const envDir = path.join(dir, "custom-config-home");
+		fs.mkdirSync(envDir, { recursive: true, mode: 0o700 });
+		const originalCwd = process.cwd();
+		const originalDir = process.env.NANOCODER_CONFIG_DIR;
+		const originalHome = process.env.HOME;
+		process.env.NANOCODER_CONFIG_DIR = envDir;
+		process.env.HOME = dir;
+		process.chdir(dir);
+
+		try {
+			await runWizard({
+				"select:Select provider type:": "local",
+				"select:Select a provider to configure:": "ollama",
+				"input:Enter Base URL (default: http://localhost:11434/v1): ":
+					"http://localhost:11434/v1",
+				"select:Select a model:": "llama4",
+			});
+
+			t.true(
+				fs.existsSync(path.join(envDir, "agents.config.json")),
+				"written to NANOCODER_CONFIG_DIR, where loadConfig will look",
+			);
+			t.false(
+				fs.existsSync(configPathUnderHome(dir)),
+				"and not to the platform directory, which loadConfig ignores when the env var is set",
+			);
+		} finally {
+			if (originalDir === undefined) {
+				delete process.env.NANOCODER_CONFIG_DIR;
+			} else {
+				process.env.NANOCODER_CONFIG_DIR = originalDir;
+			}
+			if (originalHome === undefined) {
+				delete process.env.HOME;
+			} else {
+				process.env.HOME = originalHome;
+			}
+			process.chdir(originalCwd);
+			fs.rmSync(dir, { recursive: true, force: true });
+		}
+	},
+);
+
+test.serial(
+	"runConfigWizard › warns when a project-local config will shadow what it wrote",
+	async (t) => {
+		// `loadConfig` reads ./agents.config.json first, so the wizard can succeed
+		// and still change nothing. Saying so is the difference between a
+		// confusing evening and a one-line fix.
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nanoterm-wz-shadow-"));
+		const originalCwd = process.cwd();
+		const originalHome = process.env.HOME;
+		const originalDir = process.env.NANOCODER_CONFIG_DIR;
+		delete process.env.NANOCODER_CONFIG_DIR;
+		process.env.HOME = dir;
+		process.chdir(dir);
+		fs.writeFileSync(
+			path.join(dir, "agents.config.json"),
+			JSON.stringify({ provider: "local-override", providers: [] }),
+		);
+
+		const logged: string[] = [];
+		const originalLog = console.log;
+		console.log = (...args: unknown[]) => {
+			logged.push(args.map(String).join(" "));
+		};
+
+		try {
+			await runWizard({
+				"select:Select provider type:": "local",
+				"select:Select a provider to configure:": "ollama",
+				"input:Enter Base URL (default: http://localhost:11434/v1): ":
+					"http://localhost:11434/v1",
+				"select:Select a model:": "llama4",
+			});
+			const output = logged.join("\n");
+			t.true(
+				output.includes("takes precedence"),
+				`expected a shadowing warning, got: ${output}`,
+			);
+		} finally {
+			console.log = originalLog;
+			if (originalDir !== undefined) {
+				process.env.NANOCODER_CONFIG_DIR = originalDir;
+			}
+			if (originalHome === undefined) {
+				delete process.env.HOME;
+			} else {
+				process.env.HOME = originalHome;
+			}
+			process.chdir(originalCwd);
+			fs.rmSync(dir, { recursive: true, force: true });
+		}
+	},
+);

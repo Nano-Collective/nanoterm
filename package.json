@@ -47,7 +47,7 @@
 		"companion"
 	],
 	"author": "Nano Collective",
-	"license": "ISC",
+	"license": "MIT",
 	"bugs": {
 		"url": "https://github.com/Nano-Collective/nanoterm/issues"
 	},
