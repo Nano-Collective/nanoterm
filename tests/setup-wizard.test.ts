@@ -66,19 +66,27 @@ function configPathUnderHome(home: string): string {
 	return path.join(configDirUnderHome(home), "agents.config.json");
 }
 
-async function runWizard(answers: Record<string, unknown>): Promise<void> {
+/**
+ * Runs the wizard against stubbed answers and returns any `process.exit` codes
+ * it called — empty when it finished on its own rather than being cancelled.
+ */
+async function runWizard(answers: Record<string, unknown>): Promise<number[]> {
 	resetStubs();
 	globalThis.__INQUIRER_STUB_ANSWERS__ = answers;
 	// The wizard may call process.exit(0) when cancelled at the root;
-	// temporarily make it a no-op so AVA doesn't fail the test file.
+	// temporarily record it instead so AVA doesn't fail the test file.
 	const originalExit = process.exit;
-	process.exit = (() => {}) as never;
+	const exits: number[] = [];
+	process.exit = ((code?: number) => {
+		exits.push(code ?? 0);
+	}) as never;
 	try {
 		const { runConfigWizard } = await import("../src/setup.js");
 		await runConfigWizard();
 	} finally {
 		process.exit = originalExit;
 	}
+	return exits;
 }
 
 test.serial(
@@ -509,18 +517,67 @@ test.serial(
 			// reached. It only became a real test once the wizard started reading
 			// the config the test seeds (#33).
 			//
-			// The third answer is an ExitPromptError rather than a value: the
-			// action menu has no exit choice, so anything that is not "active"
-			// falls through to the provider-type branch and the loop never ends.
-			// Ctrl+C is the only way out of it, which is what this simulates.
+			// The third answer leaves through the menu's own "Exit" choice. Before
+			// it existed this had to simulate Ctrl+C, which would also have ended
+			// the loop if a branch failed to return here — so a broken back path
+			// passed. Now a branch that does not come back leaves its prompt
+			// unanswered and the test times out instead.
 			const answers: Record<string, unknown> = {
-				"select:What would you like to do?": ["active", "update"],
+				"select:What would you like to do?": ["active", "update", "exit"],
 				"select:Select active provider:": "__back",
 				"select:Select provider type:": "__back",
-				__throw_exit_on__: "select:What would you like to do?",
 			};
-			await runWizard(answers);
-			t.pass("wizard handled back navigation");
+			const exits = await runWizard(answers);
+			t.deepEqual(
+				answers["select:What would you like to do?"],
+				[],
+				"the action menu should be reached once per branch, then exited",
+			);
+			t.deepEqual(exits, [], "the wizard should finish without process.exit");
+		} finally {
+			if (originalDir === undefined) {
+				delete process.env.NANOCODER_CONFIG_DIR;
+			} else {
+				process.env.NANOCODER_CONFIG_DIR = originalDir;
+			}
+			process.chdir(originalCwd);
+			fs.rmSync(dir, { recursive: true, force: true });
+		}
+	},
+);
+
+void 0;
+
+test.serial(
+	"runConfigWizard › 'Exit' on the action menu leaves the config untouched",
+	async (t) => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nanoterm-wz-exit-"));
+		const configDir = path.join(dir, "config");
+		fs.mkdirSync(configDir, { recursive: true, mode: 0o700 });
+		const configPath = path.join(configDir, "agents.config.json");
+		const original = JSON.stringify({
+			provider: "Ollama",
+			model: "llama4",
+			providers: [
+				{
+					name: "Ollama",
+					baseUrl: "http://localhost:11434/v1",
+					sdkProvider: "openai-compatible",
+				},
+			],
+		});
+		fs.writeFileSync(configPath, original);
+		const originalCwd = process.cwd();
+		const originalDir = process.env.NANOCODER_CONFIG_DIR;
+		process.env.NANOCODER_CONFIG_DIR = configDir;
+		process.chdir(dir);
+
+		try {
+			const exits = await runWizard({
+				"select:What would you like to do?": "exit",
+			});
+			t.deepEqual(exits, [], "the wizard should finish without process.exit");
+			t.is(fs.readFileSync(configPath, "utf-8"), original);
 		} finally {
 			if (originalDir === undefined) {
 				delete process.env.NANOCODER_CONFIG_DIR;

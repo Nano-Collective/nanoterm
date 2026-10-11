@@ -317,6 +317,10 @@ export async function runConfigWizard() {
 						choices: [
 							{ name: "Set Active Provider", value: "active" },
 							{ name: "Add / Update Provider Credentials", value: "update" },
+							// Every other screen has a way back; this one is the root, so
+							// its way back is out. Without it, a user who opened the wizard
+							// only to look had no exit but Ctrl+C.
+							{ name: "Exit", value: "exit" },
 						],
 					}),
 				"exit", // Using Ctrl+C at the root exits
@@ -325,7 +329,9 @@ export async function runConfigWizard() {
 
 			if (action === CANCEL) continue;
 
-			if (action === "active") {
+			if (action === "exit") {
+				state = "exit";
+			} else if (action === "active") {
 				state = "set_active_provider";
 			} else {
 				state = "select_provider_type";
