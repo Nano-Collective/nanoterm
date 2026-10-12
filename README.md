@@ -10,7 +10,7 @@ Built by the [Nano Collective](https://nanocollective.org) — a community colle
 ![Repo Size](https://github.com/Nano-Collective/nanoterm/raw/main/badges/repo-size.svg)
 ![Forks](https://github.com/Nano-Collective/nanoterm/raw/main/badges/forks.svg)
 
-It allows you to bypass writing complex regex, `find`, `awk`, or `sed` commands by simply asking your terminal what you want it to do in plain English. `nanoterm` connects directly to your chosen provider (OpenAI, Anthropic, Google, Atlas Cloud) via the Vercel AI SDK.
+It allows you to bypass writing complex regex, `find`, `awk`, or `sed` commands by simply asking your terminal what you want it to do in plain English. `nanoterm` connects directly to your chosen provider (OpenAI, Anthropic, Google, OpenRouter, and more) via the Vercel AI SDK.
 
 ## What it is / What it is not
 
@@ -54,7 +54,7 @@ Before generating commands, set up your API keys and default models:
 nanoterm config
 ```
 
-This will launch a beautiful interactive setup wizard. You can choose from OpenAI, Anthropic, Google Gemini, Atlas Cloud, or any Custom OpenAI-compatible provider.
+This will launch a beautiful interactive setup wizard. You can choose from OpenAI, Anthropic, Google Gemini, OpenRouter, or any Custom OpenAI-compatible provider.
 
 ## Usage Examples
 

@@ -71,7 +71,7 @@ passed to the child leaks more than it needs.
 
 `privacy.ts`, `provider.ts` and `env.ts` decide what leaves the machine. The
 user's prompt can contain paths, hostnames and secrets, and it is sent to
-OpenAI, Anthropic, Google or Atlas Cloud.
+whichever cloud provider the user configured.
 
 - API keys must not reach logs, error messages, session files or the model
   prompt.

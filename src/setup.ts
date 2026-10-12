@@ -95,18 +95,6 @@ const CLOUD_PROVIDERS: ProviderOption[] = [
 		sdkProvider: "google",
 	},
 	{
-		id: "atlas-cloud",
-		name: "Atlas Cloud",
-		defaultBaseUrl: "https://api.atlascloud.ai/v1",
-		models: [
-			"google/gemini-3.6-flash",
-			"openai/gpt-5.6-terra",
-			"anthropic/claude-sonnet-5",
-			"Custom...",
-		],
-		sdkProvider: "openai-compatible",
-	},
-	{
 		id: "openrouter",
 		name: "OpenRouter",
 		defaultBaseUrl: "https://openrouter.ai/api/v1",
